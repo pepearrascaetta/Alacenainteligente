@@ -32,6 +32,16 @@
         body { -webkit-tap-highlight-color: transparent; user-select: none; }
         input, textarea { user-select: text; }
     </style>
+    <!-- Configuraciones para que se vea como una App Nativa (PWA) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Alacena">
+    <meta name="apple-mobile-web-app-title" content="Alacena">
+    <meta name="theme-color" content="#2ecc71"> <!-- Color de la barra de estado -->
+
+    <!-- Iconos para Android e iOS -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="192x192" href="icon.png">
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 pb-20">
 
