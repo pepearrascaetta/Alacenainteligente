@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Alacena Inteligente & Lista Predictiva</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h6v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -25,23 +26,12 @@
         }
     </script>
     <style>
-        /* Custom scrollbar & mobile touches */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
         body { -webkit-tap-highlight-color: transparent; user-select: none; }
         input, textarea { user-select: text; }
     </style>
-    <!-- Configuraciones para que se vea como una App Nativa (PWA) -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Alacena">
-    <meta name="apple-mobile-web-app-title" content="Alacena">
-    <meta name="theme-color" content="#2ecc71"> <!-- Color de la barra de estado -->
-
-    <!-- Iconos para Android e iOS -->
-    <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
-    <link rel="apple-touch-icon" type="image/png" sizes="192x192" href="icon.png">
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 pb-20">
 
@@ -54,12 +44,12 @@
                 <h1 class="font-bold text-base leading-tight">Alacena Predictiva</h1>
                 <p class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <span id="offline-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                    <span id="offline-status-text">Online / Modo Offline listo</span>
+                    <span id="offline-status-text">Datos en LocalStorage</span>
                 </p>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Cambiar tema">
                 <i class="fa-solid fa-moon dark:hidden text-lg"></i>
                 <i class="fa-solid fa-sun hidden dark:inline text-lg"></i>
             </button>
@@ -74,7 +64,6 @@
         
         <!-- VIEW: PANTRY / INVENTORY -->
         <section id="view-inventory" class="space-y-4">
-            <!-- Summary Header -->
             <div class="grid grid-cols-3 gap-2">
                 <div class="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm text-center">
                     <span class="text-xs text-slate-400 block font-medium">Total Items</span>
@@ -84,13 +73,13 @@
                     <span class="text-xs text-amber-600 dark:text-amber-400 block font-medium">Por Agotarse</span>
                     <span id="stat-low-stock" class="text-xl font-bold text-amber-600 dark:text-amber-400">0</span>
                 </div>
-                <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/50 dark:border-emerald-900/50 shadow-sm text-center">
+                <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 shadow-sm text-center">
                     <span class="text-xs text-emerald-600 dark:text-emerald-400 block font-medium">En Compras</span>
                     <span id="stat-shopping-count" class="text-xl font-bold text-emerald-600 dark:text-emerald-400">0</span>
                 </div>
             </div>
 
-            <!-- Category & Search Filters -->
+            <!-- Filters & Reset Data Option -->
             <div class="flex gap-2">
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
@@ -98,22 +87,25 @@
                            class="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <select id="inventory-category-filter" onchange="renderInventory()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <option value="ALL">Todas las Categorías</option>
+                    <option value="ALL">Todas</option>
                     <option value="Víveres">Víveres</option>
-                    <option value="Frutas y Verduras">Frutas/Verduras</option>
+                    <option value="Frutas y Verduras">Frutas</option>
                     <option value="Limpieza">Limpieza</option>
                     <option value="Otros">Otros</option>
                 </select>
             </div>
 
-            <!-- Add Item Quick Action -->
-            <button onclick="openItemModal()" class="w-full py-2.5 bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300/70 dark:hover:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition">
-                <i class="fa-solid fa-plus text-emerald-500"></i> Agregar Nuevo Producto Manualmente
-            </button>
+            <div class="flex gap-2">
+                <button onclick="openItemModal()" class="flex-1 py-2.5 bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300/70 dark:hover:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-plus text-emerald-500"></i> Nuevo Producto
+                </button>
+                <button onclick="resetToDefaultData()" class="px-3 py-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold hover:bg-rose-100 transition" title="Restaurar valores iniciales de fábrica">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
 
-            <!-- Inventory List -->
             <div id="inventory-list" class="space-y-3">
-                <!-- Items dynamically injected here -->
+                <!-- Inventory items injected dynamically -->
             </div>
         </section>
 
@@ -122,15 +114,15 @@
             <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-base">Lista de Compras</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Predicha por algoritmo de consumo y agregados manuales</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Predicha por algoritmo de consumo</p>
                 </div>
                 <button onclick="clearCheckedShoppingItems()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50">
-                    <i class="fa-solid fa-trash-can mr-1"></i>Limpiar
+                    <i class="fa-solid fa-trash-can mr-1"></i>Limpiar tildados
                 </button>
             </div>
 
             <div id="shopping-list" class="space-y-2">
-                <!-- Shopping Items injected here -->
+                <!-- Shopping items injected dynamically -->
             </div>
 
             <div class="pt-2">
@@ -147,7 +139,7 @@
                     <i class="fa-solid fa-utensils text-xl"></i>
                     <h2 class="font-bold text-lg">Chef Predictivo AI</h2>
                 </div>
-                <p class="text-xs opacity-90">Sugerencias inteligentes basadas estrictamente en tu stock actual para evitar el desperdicio de comida.</p>
+                <p class="text-xs opacity-90">Sugerencias inteligentes basadas estrictamente en tu stock actual.</p>
                 <button onclick="generateRecipes()" class="mt-3 w-full py-2 bg-white text-orange-600 font-bold rounded-xl text-xs hover:bg-orange-50 shadow-sm transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir Recetas con mi Stock
                 </button>
@@ -155,7 +147,7 @@
 
             <div id="recipes-loading" class="hidden text-center py-8 space-y-3">
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
-                <p class="text-xs font-semibold text-slate-500">Analizando víveres y calculando combinación de ingredientes...</p>
+                <p class="text-xs font-semibold text-slate-500">Analizando víveres con Gemini AI...</p>
             </div>
 
             <div id="recipes-container" class="space-y-3">
@@ -184,9 +176,8 @@
         </div>
     </nav>
 
-    <!-- MODAL: ADD / EDIT ITEM -->
     <div id="modal-item" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700">
             <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
                 <h3 id="modal-item-title" class="font-bold text-base">Agregar Producto</h3>
                 <button onclick="closeItemModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
@@ -195,7 +186,7 @@
                 <input type="hidden" id="item-id">
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del producto</label>
-                    <input type="text" id="item-name" required placeholder="Ej: Leche, Jabón en polvo, Plátanos..." 
+                    <input type="text" id="item-name" required placeholder="Ej: Leche, Manzanas..." 
                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -203,7 +194,7 @@
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Categoría</label>
                         <select id="item-category" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                             <option value="Víveres">Víveres</option>
-                            <option value="Frutas y Verduras">Frutas/Verduras</option>
+                            <option value="Frutas y Verduras">Frutas y Verduras</option>
                             <option value="Limpieza">Limpieza</option>
                             <option value="Otros">Otros</option>
                         </select>
@@ -226,13 +217,13 @@
                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Consumo Diario Estimado</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Consumo Diario Est.</label>
                         <input type="number" step="0.01" min="0.01" id="item-daily" required placeholder="Ej: 0.5" 
                                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                 </div>
                 <div id="ripeness-field-container" class="hidden">
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">Madurez (Frutas/Verduras)</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Madurez</label>
                     <select id="item-ripeness" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <option value="Verde / Inmaduro">Verde / Inmaduro</option>
                         <option value="Maduro / Listo">Maduro / Listo para comer</option>
@@ -248,7 +239,6 @@
         </div>
     </div>
 
-    <!-- MODAL: AI IMAGE SCANNER -->
     <div id="modal-scanner" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700">
             <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -259,13 +249,12 @@
                 <button onclick="closeScannerModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
             </div>
 
-            <!-- Image Upload or Capture Container -->
             <div class="space-y-3">
                 <div id="scanner-preview-box" class="w-full h-48 bg-slate-100 dark:bg-slate-900 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden relative">
                     <img id="scanner-img-preview" class="w-full h-full object-contain hidden" alt="Vista previa">
                     <div id="scanner-placeholder" class="text-center p-4 space-y-2">
                         <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400"></i>
-                        <p class="text-xs text-slate-500">Captura una foto o selecciona una imagen del producto o vegetal</p>
+                        <p class="text-xs text-slate-500">Sube una foto de tu producto, verdura o fruta</p>
                     </div>
                 </div>
 
@@ -281,10 +270,9 @@
                 </button>
             </div>
 
-            <!-- Analysis Progress/Result -->
             <div id="scanner-loading" class="hidden text-center py-4 space-y-2">
                 <i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500"></i>
-                <p class="text-xs font-semibold text-slate-500">Procesando imagen con modelo Gemini AI...</p>
+                <p class="text-xs font-semibold text-slate-500">Procesando imagen con Gemini AI...</p>
             </div>
 
             <div id="scanner-result" class="hidden bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-xs space-y-2">
@@ -301,23 +289,20 @@
     </div>
 
     <script>
-        // GLOBAL STATE & STORAGE KEYS
-        const STORAGE_KEY_STOCK = 'smart_pantry_stock_v1';
-        const STORAGE_KEY_SHOPPING = 'smart_pantry_shopping_v1';
+        const STORAGE_KEY_STOCK = 'smart_pantry_stock_v2';
+        const STORAGE_KEY_SHOPPING = 'smart_pantry_shopping_v2';
 
         let inventory = [];
         let shoppingList = [];
         let currentScannedData = null;
         let selectedImageBase64 = null;
 
-        // INITIALIZATION
         window.onload = function() {
             loadInitialData();
             updateOfflineStatus();
             window.addEventListener('online', updateOfflineStatus);
             window.addEventListener('offline', updateOfflineStatus);
             
-            // Toggle Ripeness Visibility in Item Form based on Category
             document.getElementById('item-category').addEventListener('change', function(e) {
                 const container = document.getElementById('ripeness-field-container');
                 if (e.target.value === 'Frutas y Verduras') {
@@ -333,14 +318,13 @@
             const text = document.getElementById('offline-status-text');
             if (navigator.onLine) {
                 dot.className = "w-2 h-2 rounded-full bg-emerald-500 inline-block";
-                text.textContent = "Online / Modo Offline listo";
+                text.textContent = "Guardado Local / AI Activa";
             } else {
                 dot.className = "w-2 h-2 rounded-full bg-amber-500 inline-block";
-                text.textContent = "Modo Offline (Sin IA visual)";
+                text.textContent = "Modo Offline (LocalStorage activo)";
             }
         }
 
-        // LOAD DEFAULT / LOCALSTORAGE DATA
         function loadInitialData() {
             const localStock = localStorage.getItem(STORAGE_KEY_STOCK);
             const localShopping = localStorage.getItem(STORAGE_KEY_SHOPPING);
@@ -348,11 +332,10 @@
             if (localStock) {
                 inventory = JSON.parse(localStock);
             } else {
-                // Default Seed Data
                 inventory = [
                     { id: '1', name: 'Leche Entera', category: 'Víveres', stock: 2, unit: 'Litros', dailyConsumption: 0.5, lastUpdated: Date.now(), ripeness: 'N/A' },
-                    { id: '2', name: 'Plátanos / Bananas', category: 'Frutas y Verduras', stock: 1.5, unit: 'Kg', dailyConsumption: 0.3, lastUpdated: Date.now(), ripeness: 'Maduro / Listo' },
-                    { id: '3', name: 'Detergente Líquido', category: 'Limpieza', stock: 0.4, unit: 'Litros', dailyConsumption: 0.1, lastUpdated: Date.now(), ripeness: 'N/A' },
+                    { id: '2', name: 'Plátanos', category: 'Frutas y Verduras', stock: 1.5, unit: 'Kg', dailyConsumption: 0.3, lastUpdated: Date.now(), ripeness: 'Maduro / Listo' },
+                    { id: '3', name: 'Detergente', category: 'Limpieza', stock: 0.4, unit: 'Litros', dailyConsumption: 0.1, lastUpdated: Date.now(), ripeness: 'N/A' },
                     { id: '4', name: 'Arroz Blanco', category: 'Víveres', stock: 3, unit: 'Kg', dailyConsumption: 0.15, lastUpdated: Date.now(), ripeness: 'N/A' }
                 ];
                 saveInventory();
@@ -376,11 +359,14 @@
             localStorage.setItem(STORAGE_KEY_SHOPPING, JSON.stringify(shoppingList));
         }
 
-        /*
-          PREDICTIVE ALGORITHM:
-          Calculates estimated days left = (Current Stock / Daily Consumption Rate).
-          If days left <= 3, the item is flagged as LOW STOCK and automatically added to Shopping List.
-        */
+        function resetToDefaultData() {
+            if (confirm("¿Deseas restablecer los datos originales de ejemplo? Esto borrará los cambios actuales.")) {
+                localStorage.removeItem(STORAGE_KEY_STOCK);
+                localStorage.removeItem(STORAGE_KEY_SHOPPING);
+                loadInitialData();
+            }
+        }
+
         function runPredictiveEngine() {
             let newlyAddedToShopping = 0;
 
@@ -388,7 +374,6 @@
                 const daysRemaining = item.dailyConsumption > 0 ? (item.stock / item.dailyConsumption) : 999;
                 item.daysRemaining = Math.max(0, Math.round(daysRemaining));
 
-                // Auto Add to Shopping List if <= 3 days left and not already in shopping list
                 if (item.daysRemaining <= 3) {
                     const exists = shoppingList.find(s => s.itemId === item.id);
                     if (!exists) {
@@ -397,7 +382,7 @@
                             itemId: item.id,
                             name: item.name,
                             category: item.category,
-                            quantityToBuy: Math.max(1, Math.ceil(item.dailyConsumption * 7)), // Default suggest 1 week supply
+                            quantityToBuy: Math.max(1, Math.ceil(item.dailyConsumption * 7)),
                             unit: item.unit,
                             checked: false,
                             autoAdded: true
@@ -412,7 +397,6 @@
             }
         }
 
-        // NAVIGATION SWITCHING
         function switchTab(tabName) {
             document.getElementById('view-inventory').classList.add('hidden');
             document.getElementById('view-shopping').classList.add('hidden');
@@ -439,7 +423,6 @@
             }
         }
 
-        // RENDER FUNCTIONS
         function renderAll() {
             renderInventory();
             renderShoppingList();
@@ -478,7 +461,7 @@
                 container.innerHTML = `
                     <div class="text-center py-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
                         <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i>
-                        <p class="text-xs text-slate-500">No se encontraron productos registrados.</p>
+                        <p class="text-xs text-slate-500">No hay productos en esta vista.</p>
                     </div>`;
                 return;
             }
@@ -489,7 +472,7 @@
                 const categoryIcon = getCategoryIcon(item.category);
 
                 return `
-                <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${isLow ? 'border-amber-300 dark:border-amber-700/70 bg-amber-50/30' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-3">
+                <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${isLow ? 'border-amber-300 dark:border-amber-700/70 bg-amber-50/20' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl ${isLow ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} flex items-center justify-center text-base">
                             <i class="${categoryIcon}"></i>
@@ -504,7 +487,7 @@
                                     </span>` : ''}
                             </div>
                             <span class="text-[10px] ${isLow ? 'text-amber-600 font-bold' : 'text-slate-400'} block mt-0.5">
-                                <i class="fa-regular fa-clock mr-1"></i> Se agota en approx. ${daysLeft > 100 ? '+99' : daysLeft} días
+                                <i class="fa-regular fa-clock mr-1"></i> Se agota en ~${daysLeft > 100 ? '+99' : daysLeft} días
                             </span>
                         </div>
                     </div>
@@ -538,14 +521,13 @@
             }
         }
 
-        // SHOPPING LIST LOGIC
         function renderShoppingList() {
             const container = document.getElementById('shopping-list');
             if (shoppingList.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
                         <i class="fa-solid fa-cart-arrow-down text-3xl text-slate-300 mb-2"></i>
-                        <p class="text-xs text-slate-500">Tu lista de compras está vacía.</p>
+                        <p class="text-xs text-slate-500">Tu lista de compras está al día.</p>
                     </div>`;
                 return;
             }
@@ -558,7 +540,7 @@
                         <div>
                             <span class="font-semibold text-sm block leading-tight">${escapeHtml(item.name)}</span>
                             <span class="text-[10px] text-slate-400">
-                                Sugerido: ${item.quantityToBuy} ${item.unit} ${item.autoAdded ? '(Predictivo)' : ''}
+                                Sugerido: ${item.quantityToBuy} ${item.unit}
                             </span>
                         </div>
                     </div>
@@ -596,7 +578,6 @@
         function commitPurchases() {
             const purchased = shoppingList.filter(s => s.checked);
             if (purchased.length === 0) {
-                alert("Selecciona o tilda los productos que ya compraste para actualizar el stock.");
                 return;
             }
 
@@ -623,11 +604,8 @@
             saveShoppingList();
             runPredictiveEngine();
             renderAll();
-
-            alert(`¡Se han restaurado ${purchased.length} productos a tu alacena correctamente!`);
         }
 
-        // ITEM MODAL EDIT / CREATE
         function openItemModal() {
             document.getElementById('modal-item-title').textContent = "Agregar Producto";
             document.getElementById('form-item').reset();
@@ -733,24 +711,20 @@
 
         async function analyzeImageWithGemini() {
             if (!selectedImageBase64) return;
-            if (!navigator.onLine) {
-                alert("La función de reconocimiento por visión requiere conexión a internet.");
-                return;
-            }
 
             document.getElementById('scanner-loading').classList.remove('hidden');
             document.getElementById('scanner-result').classList.add('hidden');
             document.getElementById('btn-analyze-ai').disabled = true;
 
-            const prompt = `Analiza esta imagen para una aplicación de control de inventario de víveres, frutas, verduras o productos de limpieza.
-            Responde ÚNICAMENTE en formato JSON con la siguiente estructura exacta:
+            const prompt = `Analiza esta imagen para una aplicación de control de inventario de alacena y frutas/verduras.
+            Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
             {
-              "productName": "Nombre común del producto en español",
+              "productName": "Nombre común",
               "category": "Víveres" | "Frutas y Verduras" | "Limpieza" | "Otros",
-              "estimatedQuantity": número_estimado,
+              "estimatedQuantity": 1,
               "unit": "Unidades" | "Kg" | "Litros" | "Paquetes",
               "ripeness": "Verde / Inmaduro" | "Maduro / Listo" | "Muy Maduro" | "N/A",
-              "details": "Breve descripción incluyendo si es fruta/verdura su madurez o sugerencia de consumo."
+              "details": "Breve descripción"
             }`;
 
             const apiKey = "";
@@ -783,14 +757,11 @@
                     currentScannedData = JSON.parse(jsonText);
                     document.getElementById('res-product-name').textContent = currentScannedData.productName;
                     document.getElementById('res-product-category').textContent = currentScannedData.category;
-                    document.getElementById('res-product-details').textContent = `${currentScannedData.details} (Cantidad est: ${currentScannedData.estimatedQuantity} ${currentScannedData.unit})`;
+                    document.getElementById('res-product-details').textContent = `${currentScannedData.details}`;
                     document.getElementById('scanner-result').classList.remove('hidden');
-                } else {
-                    alert("No se pudo analizar el producto. Inténtalo con otra foto.");
                 }
             } catch (err) {
                 console.error(err);
-                alert("Error al conectar con el servicio de IA. Revisa tu conexión.");
             } finally {
                 document.getElementById('scanner-loading').classList.add('hidden');
                 document.getElementById('btn-analyze-ai').disabled = false;
@@ -821,34 +792,19 @@
             runPredictiveEngine();
             renderAll();
             closeScannerModal();
-            alert(`¡${currentScannedData.productName} registrado con éxito en tu alacena!`);
         }
 
         async function generateRecipes() {
-            if (!navigator.onLine) {
-                alert("La generación de recetas con IA requiere conexión a internet.");
-                return;
-            }
-
             const availableStock = inventory.filter(i => i.stock > 0 && i.category !== 'Limpieza');
-            if (availableStock.length === 0) {
-                alert("Tu alacena no tiene suficientes víveres o verduras registradas.");
-                return;
-            }
+            if (availableStock.length === 0) return;
 
-            const stockSummary = availableStock.map(i => `${i.name} (${i.stock} ${i.unit}, estado: ${i.ripeness || 'N/A'})`).join(', ');
+            const stockSummary = availableStock.map(i => `${i.name} (${i.stock} ${i.unit})`).join(', ');
 
             document.getElementById('recipes-loading').classList.remove('hidden');
             document.getElementById('recipes-container').innerHTML = '';
 
-            const systemPrompt = "Eres un chef experto enfocado en evitar el desperdicio de comida y cocinar recetas deliciosas con lo que hay en casa.";
-            const userQuery = `Tengo exactamente los siguientes ingredientes en mi cocina: ${stockSummary}.
-            Genera 2 o 3 recetas creativas y deliciosas que utilicen PRINCIPALMENTE estos ingredientes. 
-            Responde con un formato JSON estructurado como un array de objetos con las propiedades:
-            - title (string)
-            - cookTime (string)
-            - ingredientsUsed (array de strings)
-            - instructions (array de strings de pasos)`;
+            const systemPrompt = "Eres un chef experto en cocina económica.";
+            const userQuery = `Tengo estos ingredientes: ${stockSummary}. Genera 2 recetas creativas. Responde en JSON con array de objetos: title, cookTime, ingredientsUsed (array), instructions (array).`;
 
             const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -872,14 +828,10 @@
                 const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
                 if (jsonText) {
-                    const recipes = JSON.parse(jsonText);
-                    renderRecipes(recipes);
-                } else {
-                    document.getElementById('recipes-container').innerHTML = `<p class="text-xs text-rose-500 text-center">No se pudieron generar recetas en este momento.</p>`;
+                    renderRecipes(JSON.parse(jsonText));
                 }
             } catch (e) {
                 console.error(e);
-                document.getElementById('recipes-container').innerHTML = `<p class="text-xs text-rose-500 text-center">Error al conectar con el servidor de IA.</p>`;
             } finally {
                 document.getElementById('recipes-loading').classList.add('hidden');
             }
@@ -896,13 +848,13 @@
                         </span>
                     </div>
                     <div>
-                        <span class="text-[11px] font-bold text-slate-500 block mb-1">Ingredientes Usados:</span>
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">Ingredientes:</span>
                         <div class="flex flex-wrap gap-1">
                             ${r.ingredientsUsed.map(ing => `<span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">${escapeHtml(ing)}</span>`).join('')}
                         </div>
                     </div>
                     <div>
-                        <span class="text-[11px] font-bold text-slate-500 block mb-1">Pasos:</span>
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">Preparación:</span>
                         <ol class="list-decimal list-inside text-xs text-slate-600 dark:text-slate-300 space-y-1">
                             ${r.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
                         </ol>
@@ -911,7 +863,6 @@
             `).join('');
         }
 
-        // UTILS
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
         }
