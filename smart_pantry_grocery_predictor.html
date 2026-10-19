@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Alacena Inteligente & Lista Predictiva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar & mobile touches */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        body { -webkit-tap-highlight-color: transparent; user-select: none; }
+        input, textarea { user-select: text; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 pb-20">
+
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md">
+                <i class="fa-solid fa-basket-shopping text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base leading-tight">Alacena Predictiva</h1>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <span id="offline-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    <span id="offline-status-text">Online / Modo Offline listo</span>
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                <i class="fa-solid fa-sun hidden dark:inline text-lg"></i>
+            </button>
+            <button onclick="openScannerModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-md active:scale-95 transition">
+                <i class="fa-solid fa-camera"></i>
+                <span>Escanear AI</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="app-container" class="flex-1 max-w-lg w-full mx-auto p-4 space-y-4">
+        
+        <!-- VIEW: PANTRY / INVENTORY -->
+        <section id="view-inventory" class="space-y-4">
+            <!-- Summary Header -->
+            <div class="grid grid-cols-3 gap-2">
+                <div class="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm text-center">
+                    <span class="text-xs text-slate-400 block font-medium">Total Items</span>
+                    <span id="stat-total-items" class="text-xl font-bold text-slate-800 dark:text-white">0</span>
+                </div>
+                <div class="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200/50 dark:border-amber-900/50 shadow-sm text-center">
+                    <span class="text-xs text-amber-600 dark:text-amber-400 block font-medium">Por Agotarse</span>
+                    <span id="stat-low-stock" class="text-xl font-bold text-amber-600 dark:text-amber-400">0</span>
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/50 dark:border-emerald-900/50 shadow-sm text-center">
+                    <span class="text-xs text-emerald-600 dark:text-emerald-400 block font-medium">En Compras</span>
+                    <span id="stat-shopping-count" class="text-xl font-bold text-emerald-600 dark:text-emerald-400">0</span>
+                </div>
+            </div>
+
+            <!-- Category & Search Filters -->
+            <div class="flex gap-2">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="inventory-search" placeholder="Buscar producto..." oninput="renderInventory()" 
+                           class="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <select id="inventory-category-filter" onchange="renderInventory()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="ALL">Todas las Categorías</option>
+                    <option value="Víveres">Víveres</option>
+                    <option value="Frutas y Verduras">Frutas/Verduras</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Otros">Otros</option>
+                </select>
+            </div>
+
+            <!-- Add Item Quick Action -->
+            <button onclick="openItemModal()" class="w-full py-2.5 bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300/70 dark:hover:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-plus text-emerald-500"></i> Agregar Nuevo Producto Manualmente
+            </button>
+
+            <!-- Inventory List -->
+            <div id="inventory-list" class="space-y-3">
+                <!-- Items dynamically injected here -->
+            </div>
+        </section>
+
+        <!-- VIEW: SHOPPING LIST -->
+        <section id="view-shopping" class="space-y-4 hidden">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-base">Lista de Compras</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Predicha por algoritmo de consumo y agregados manuales</p>
+                </div>
+                <button onclick="clearCheckedShoppingItems()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50">
+                    <i class="fa-solid fa-trash-can mr-1"></i>Limpiar
+                </button>
+            </div>
+
+            <div id="shopping-list" class="space-y-2">
+                <!-- Shopping Items injected here -->
+            </div>
+
+            <div class="pt-2">
+                <button onclick="commitPurchases()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 active:scale-98 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cart-flatbed"></i> Confirmar Productos Comprados
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW: AI RECIPES -->
+        <section id="view-recipes" class="space-y-4 hidden">
+            <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-4 text-white shadow-md">
+                <div class="flex items-center gap-2 mb-1">
+                    <i class="fa-solid fa-utensils text-xl"></i>
+                    <h2 class="font-bold text-lg">Chef Predictivo AI</h2>
+                </div>
+                <p class="text-xs opacity-90">Sugerencias inteligentes basadas estrictamente en tu stock actual para evitar el desperdicio de comida.</p>
+                <button onclick="generateRecipes()" class="mt-3 w-full py-2 bg-white text-orange-600 font-bold rounded-xl text-xs hover:bg-orange-50 shadow-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir Recetas con mi Stock
+                </button>
+            </div>
+
+            <div id="recipes-loading" class="hidden text-center py-8 space-y-3">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
+                <p class="text-xs font-semibold text-slate-500">Analizando víveres y calculando combinación de ingredientes...</p>
+            </div>
+
+            <div id="recipes-container" class="space-y-3">
+                <div class="text-center py-8 text-slate-400 text-xs">
+                    Presiona el botón para generar recetas automáticas según los alimentos disponibles.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 z-30">
+        <div class="max-w-lg mx-auto flex justify-around items-center h-16 px-2">
+            <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="flex-1 flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 font-semibold transition">
+                <i class="fa-solid fa-boxes-packing text-lg"></i>
+                <span class="text-[10px] mt-1">Alacena</span>
+            </button>
+            <button onclick="switchTab('shopping')" id="tab-btn-shopping" class="flex-1 flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition relative">
+                <i class="fa-solid fa-cart-shopping text-lg"></i>
+                <span class="text-[10px] mt-1">Lista Compras</span>
+                <span id="badge-shopping" class="hidden absolute top-1 right-6 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            </button>
+            <button onclick="switchTab('recipes')" id="tab-btn-recipes" class="flex-1 flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                <i class="fa-solid fa-kitchen-set text-lg"></i>
+                <span class="text-[10px] mt-1">Recetas</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODAL: ADD / EDIT ITEM -->
+    <div id="modal-item" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 id="modal-item-title" class="font-bold text-base">Agregar Producto</h3>
+                <button onclick="closeItemModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+            </div>
+            <form id="form-item" onsubmit="saveItem(event)" class="space-y-3">
+                <input type="hidden" id="item-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del producto</label>
+                    <input type="text" id="item-name" required placeholder="Ej: Leche, Jabón en polvo, Plátanos..." 
+                           class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Categoría</label>
+                        <select id="item-category" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="Víveres">Víveres</option>
+                            <option value="Frutas y Verduras">Frutas/Verduras</option>
+                            <option value="Limpieza">Limpieza</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Unidad</label>
+                        <select id="item-unit" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="Unidades">Unidades</option>
+                            <option value="Kg">Kilogramos (Kg)</option>
+                            <option value="Gramos">Gramos (g)</option>
+                            <option value="Litros">Litros (L)</option>
+                            <option value="Paquetes">Paquetes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Stock Actual</label>
+                        <input type="number" step="0.1" min="0" id="item-stock" required placeholder="0" 
+                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Consumo Diario Estimado</label>
+                        <input type="number" step="0.01" min="0.01" id="item-daily" required placeholder="Ej: 0.5" 
+                               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div id="ripeness-field-container" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Madurez (Frutas/Verduras)</label>
+                    <select id="item-ripeness" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="Verde / Inmaduro">Verde / Inmaduro</option>
+                        <option value="Maduro / Listo">Maduro / Listo para comer</option>
+                        <option value="Muy Maduro">Muy Maduro (Consumir pronto)</option>
+                        <option value="N/A">No Aplica</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeItemModal()" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl">Cancelar</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-md hover:bg-emerald-700">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: AI IMAGE SCANNER -->
+    <div id="modal-scanner" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-eye text-emerald-500"></i>
+                    <h3 class="font-bold text-base">Reconocimiento Visión AI</h3>
+                </div>
+                <button onclick="closeScannerModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+            </div>
+
+            <!-- Image Upload or Capture Container -->
+            <div class="space-y-3">
+                <div id="scanner-preview-box" class="w-full h-48 bg-slate-100 dark:bg-slate-900 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden relative">
+                    <img id="scanner-img-preview" class="w-full h-full object-contain hidden" alt="Vista previa">
+                    <div id="scanner-placeholder" class="text-center p-4 space-y-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400"></i>
+                        <p class="text-xs text-slate-500">Captura una foto o selecciona una imagen del producto o vegetal</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="file" id="scanner-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleImageSelect(event)">
+                    <button onclick="document.getElementById('scanner-file-input').click()" class="flex-1 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-camera"></i> Tomar / Subir Foto
+                    </button>
+                </div>
+
+                <button id="btn-analyze-ai" onclick="analyzeImageWithGemini()" disabled class="w-full py-2.5 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-brain"></i> Identificar Producto y Madurez
+                </button>
+            </div>
+
+            <!-- Analysis Progress/Result -->
+            <div id="scanner-loading" class="hidden text-center py-4 space-y-2">
+                <i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500"></i>
+                <p class="text-xs font-semibold text-slate-500">Procesando imagen con modelo Gemini AI...</p>
+            </div>
+
+            <div id="scanner-result" class="hidden bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-xs space-y-2">
+                <div class="font-bold text-emerald-800 dark:text-emerald-300 flex justify-between">
+                    <span id="res-product-name">Producto detectado</span>
+                    <span id="res-product-category" class="text-[10px] bg-emerald-200 dark:bg-emerald-800 px-1.5 py-0.5 rounded text-emerald-900 dark:text-emerald-100">Categoría</span>
+                </div>
+                <p id="res-product-details" class="text-slate-600 dark:text-slate-300"></p>
+                <button onclick="addScannedProductToInventory()" class="w-full py-2 bg-emerald-600 text-white font-bold rounded-lg shadow-sm hover:bg-emerald-700 mt-1">
+                    + Registrar en Alacena
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL STATE & STORAGE KEYS
+        const STORAGE_KEY_STOCK = 'smart_pantry_stock_v1';
+        const STORAGE_KEY_SHOPPING = 'smart_pantry_shopping_v1';
+
+        let inventory = [];
+        let shoppingList = [];
+        let currentScannedData = null;
+        let selectedImageBase64 = null;
+
+        // INITIALIZATION
+        window.onload = function() {
+            loadInitialData();
+            updateOfflineStatus();
+            window.addEventListener('online', updateOfflineStatus);
+            window.addEventListener('offline', updateOfflineStatus);
+            
+            // Toggle Ripeness Visibility in Item Form based on Category
+            document.getElementById('item-category').addEventListener('change', function(e) {
+                const container = document.getElementById('ripeness-field-container');
+                if (e.target.value === 'Frutas y Verduras') {
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                }
+            });
+        };
+
+        function updateOfflineStatus() {
+            const dot = document.getElementById('offline-status-dot');
+            const text = document.getElementById('offline-status-text');
+            if (navigator.onLine) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 inline-block";
+                text.textContent = "Online / Modo Offline listo";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-amber-500 inline-block";
+                text.textContent = "Modo Offline (Sin IA visual)";
+            }
+        }
+
+        // LOAD DEFAULT / LOCALSTORAGE DATA
+        function loadInitialData() {
+            const localStock = localStorage.getItem(STORAGE_KEY_STOCK);
+            const localShopping = localStorage.getItem(STORAGE_KEY_SHOPPING);
+
+            if (localStock) {
+                inventory = JSON.parse(localStock);
+            } else {
+                // Default Seed Data
+                inventory = [
+                    { id: '1', name: 'Leche Entera', category: 'Víveres', stock: 2, unit: 'Litros', dailyConsumption: 0.5, lastUpdated: Date.now(), ripeness: 'N/A' },
+                    { id: '2', name: 'Plátanos / Bananas', category: 'Frutas y Verduras', stock: 1.5, unit: 'Kg', dailyConsumption: 0.3, lastUpdated: Date.now(), ripeness: 'Maduro / Listo' },
+                    { id: '3', name: 'Detergente Líquido', category: 'Limpieza', stock: 0.4, unit: 'Litros', dailyConsumption: 0.1, lastUpdated: Date.now(), ripeness: 'N/A' },
+                    { id: '4', name: 'Arroz Blanco', category: 'Víveres', stock: 3, unit: 'Kg', dailyConsumption: 0.15, lastUpdated: Date.now(), ripeness: 'N/A' }
+                ];
+                saveInventory();
+            }
+
+            if (localShopping) {
+                shoppingList = JSON.parse(localShopping);
+            } else {
+                shoppingList = [];
+            }
+
+            runPredictiveEngine();
+            renderAll();
+        }
+
+        function saveInventory() {
+            localStorage.setItem(STORAGE_KEY_STOCK, JSON.stringify(inventory));
+        }
+
+        function saveShoppingList() {
+            localStorage.setItem(STORAGE_KEY_SHOPPING, JSON.stringify(shoppingList));
+        }
+
+        /*
+          PREDICTIVE ALGORITHM:
+          Calculates estimated days left = (Current Stock / Daily Consumption Rate).
+          If days left <= 3, the item is flagged as LOW STOCK and automatically added to Shopping List.
+        */
+        function runPredictiveEngine() {
+            let newlyAddedToShopping = 0;
+
+            inventory.forEach(item => {
+                const daysRemaining = item.dailyConsumption > 0 ? (item.stock / item.dailyConsumption) : 999;
+                item.daysRemaining = Math.max(0, Math.round(daysRemaining));
+
+                // Auto Add to Shopping List if <= 3 days left and not already in shopping list
+                if (item.daysRemaining <= 3) {
+                    const exists = shoppingList.find(s => s.itemId === item.id);
+                    if (!exists) {
+                        shoppingList.push({
+                            id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                            itemId: item.id,
+                            name: item.name,
+                            category: item.category,
+                            quantityToBuy: Math.max(1, Math.ceil(item.dailyConsumption * 7)), // Default suggest 1 week supply
+                            unit: item.unit,
+                            checked: false,
+                            autoAdded: true
+                        });
+                        newlyAddedToShopping++;
+                    }
+                }
+            });
+
+            if (newlyAddedToShopping > 0) {
+                saveShoppingList();
+            }
+        }
+
+        // NAVIGATION SWITCHING
+        function switchTab(tabName) {
+            document.getElementById('view-inventory').classList.add('hidden');
+            document.getElementById('view-shopping').classList.add('hidden');
+            document.getElementById('view-recipes').classList.add('hidden');
+
+            const btnInv = document.getElementById('tab-btn-inventory');
+            const btnShop = document.getElementById('tab-btn-shopping');
+            const btnRec = document.getElementById('tab-btn-recipes');
+
+            [btnInv, btnShop, btnRec].forEach(btn => {
+                btn.className = "flex-1 flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition relative";
+            });
+
+            if (tabName === 'inventory') {
+                document.getElementById('view-inventory').classList.remove('hidden');
+                btnInv.className = "flex-1 flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 font-semibold transition relative";
+            } else if (tabName === 'shopping') {
+                document.getElementById('view-shopping').classList.remove('hidden');
+                btnShop.className = "flex-1 flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 font-semibold transition relative";
+                renderShoppingList();
+            } else if (tabName === 'recipes') {
+                document.getElementById('view-recipes').classList.remove('hidden');
+                btnRec.className = "flex-1 flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 font-semibold transition relative";
+            }
+        }
+
+        // RENDER FUNCTIONS
+        function renderAll() {
+            renderInventory();
+            renderShoppingList();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total-items').textContent = inventory.length;
+            const lowStockCount = inventory.filter(i => (i.stock / (i.dailyConsumption || 1)) <= 3).length;
+            document.getElementById('stat-low-stock').textContent = lowStockCount;
+
+            const pendingShopping = shoppingList.filter(s => !s.checked).length;
+            document.getElementById('stat-shopping-count').textContent = pendingShopping;
+            
+            const badge = document.getElementById('badge-shopping');
+            if (pendingShopping > 0) {
+                badge.textContent = pendingShopping;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-list');
+            const searchQuery = document.getElementById('inventory-search').value.toLowerCase();
+            const catFilter = document.getElementById('inventory-category-filter').value;
+
+            const filtered = inventory.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(searchQuery);
+                const matchesCat = catFilter === 'ALL' || item.category === catFilter;
+                return matchesSearch && matchesCat;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                        <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-500">No se encontraron productos registrados.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const daysLeft = item.dailyConsumption > 0 ? Math.round(item.stock / item.dailyConsumption) : 999;
+                const isLow = daysLeft <= 3;
+                const categoryIcon = getCategoryIcon(item.category);
+
+                return `
+                <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${isLow ? 'border-amber-300 dark:border-amber-700/70 bg-amber-50/30' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl ${isLow ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} flex items-center justify-center text-base">
+                            <i class="${categoryIcon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm leading-tight">${escapeHtml(item.name)}</h4>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[11px] text-slate-500">${item.stock} ${item.unit}</span>
+                                ${item.category === 'Frutas y Verduras' && item.ripeness && item.ripeness !== 'N/A' ? `
+                                    <span class="text-[10px] px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded font-medium">
+                                        ${item.ripeness}
+                                    </span>` : ''}
+                            </div>
+                            <span class="text-[10px] ${isLow ? 'text-amber-600 font-bold' : 'text-slate-400'} block mt-0.5">
+                                <i class="fa-regular fa-clock mr-1"></i> Se agota en approx. ${daysLeft > 100 ? '+99' : daysLeft} días
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="adjustStock('${item.id}', -1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm flex items-center justify-center active:scale-95 transition">-</button>
+                        <button onclick="adjustStock('${item.id}', 1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm flex items-center justify-center active:scale-95 transition">+</button>
+                        <button onclick="editItem('${item.id}')" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function getCategoryIcon(category) {
+            switch(category) {
+                case 'Víveres': return 'fa-solid fa-wheat-awn';
+                case 'Frutas y Verduras': return 'fa-solid fa-apple-whole';
+                case 'Limpieza': return 'fa-solid fa-pump-soap';
+                default: return 'fa-solid fa-box';
+            }
+        }
+
+        function adjustStock(id, change) {
+            const item = inventory.find(i => i.id === id);
+            if (item) {
+                item.stock = Math.max(0, Math.round((item.stock + change) * 100) / 100);
+                saveInventory();
+                runPredictiveEngine();
+                renderAll();
+            }
+        }
+
+        // SHOPPING LIST LOGIC
+        function renderShoppingList() {
+            const container = document.getElementById('shopping-list');
+            if (shoppingList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                        <i class="fa-solid fa-cart-arrow-down text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-500">Tu lista de compras está vacía.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = shoppingList.map(item => `
+                <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3 ${item.checked ? 'opacity-50 line-through' : ''}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem('${item.id}')" 
+                               class="w-5 h-5 accent-emerald-600 rounded cursor-pointer">
+                        <div>
+                            <span class="font-semibold text-sm block leading-tight">${escapeHtml(item.name)}</span>
+                            <span class="text-[10px] text-slate-400">
+                                Sugerido: ${item.quantityToBuy} ${item.unit} ${item.autoAdded ? '(Predictivo)' : ''}
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="removeShoppingItem('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function toggleShoppingItem(id) {
+            const item = shoppingList.find(s => s.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                saveShoppingList();
+                renderShoppingList();
+                updateStats();
+            }
+        }
+
+        function removeShoppingItem(id) {
+            shoppingList = shoppingList.filter(s => s.id !== id);
+            saveShoppingList();
+            renderShoppingList();
+            updateStats();
+        }
+
+        function clearCheckedShoppingItems() {
+            shoppingList = shoppingList.filter(s => !s.checked);
+            saveShoppingList();
+            renderShoppingList();
+            updateStats();
+        }
+
+        function commitPurchases() {
+            const purchased = shoppingList.filter(s => s.checked);
+            if (purchased.length === 0) {
+                alert("Selecciona o tilda los productos que ya compraste para actualizar el stock.");
+                return;
+            }
+
+            purchased.forEach(p => {
+                const stockItem = inventory.find(i => i.id === p.itemId || i.name.toLowerCase() === p.name.toLowerCase());
+                if (stockItem) {
+                    stockItem.stock += p.quantityToBuy;
+                } else {
+                    inventory.push({
+                        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                        name: p.name,
+                        category: p.category || 'Otros',
+                        stock: p.quantityToBuy,
+                        unit: p.unit || 'Unidades',
+                        dailyConsumption: 0.2,
+                        lastUpdated: Date.now(),
+                        ripeness: 'N/A'
+                    });
+                }
+            });
+
+            shoppingList = shoppingList.filter(s => !s.checked);
+            saveInventory();
+            saveShoppingList();
+            runPredictiveEngine();
+            renderAll();
+
+            alert(`¡Se han restaurado ${purchased.length} productos a tu alacena correctamente!`);
+        }
+
+        // ITEM MODAL EDIT / CREATE
+        function openItemModal() {
+            document.getElementById('modal-item-title').textContent = "Agregar Producto";
+            document.getElementById('form-item').reset();
+            document.getElementById('item-id').value = "";
+            document.getElementById('modal-item').classList.remove('hidden');
+        }
+
+        function closeItemModal() {
+            document.getElementById('modal-item').classList.add('hidden');
+        }
+
+        function editItem(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-item-title').textContent = "Editar Producto";
+            document.getElementById('item-id').value = item.id;
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-category').value = item.category;
+            document.getElementById('item-unit').value = item.unit;
+            document.getElementById('item-stock').value = item.stock;
+            document.getElementById('item-daily').value = item.dailyConsumption;
+            document.getElementById('item-ripeness').value = item.ripeness || 'N/A';
+
+            if (item.category === 'Frutas y Verduras') {
+                document.getElementById('ripeness-field-container').classList.remove('hidden');
+            } else {
+                document.getElementById('ripeness-field-container').classList.add('hidden');
+            }
+
+            document.getElementById('modal-item').classList.remove('hidden');
+        }
+
+        function saveItem(event) {
+            event.preventDefault();
+            const id = document.getElementById('item-id').value;
+            const name = document.getElementById('item-name').value.trim();
+            const category = document.getElementById('item-category').value;
+            const unit = document.getElementById('item-unit').value;
+            const stock = parseFloat(document.getElementById('item-stock').value);
+            const daily = parseFloat(document.getElementById('item-daily').value);
+            const ripeness = document.getElementById('item-ripeness').value;
+
+            if (id) {
+                const item = inventory.find(i => i.id === id);
+                if (item) {
+                    item.name = name;
+                    item.category = category;
+                    item.unit = unit;
+                    item.stock = stock;
+                    item.dailyConsumption = daily;
+                    item.ripeness = category === 'Frutas y Verduras' ? ripeness : 'N/A';
+                }
+            } else {
+                inventory.push({
+                    id: 'item_' + Date.now(),
+                    name,
+                    category,
+                    unit,
+                    stock,
+                    dailyConsumption: daily,
+                    ripeness: category === 'Frutas y Verduras' ? ripeness : 'N/A',
+                    lastUpdated: Date.now()
+                });
+            }
+
+            saveInventory();
+            runPredictiveEngine();
+            renderAll();
+            closeItemModal();
+        }
+
+        function openScannerModal() {
+            selectedImageBase64 = null;
+            currentScannedData = null;
+            document.getElementById('scanner-img-preview').classList.add('hidden');
+            document.getElementById('scanner-placeholder').classList.remove('hidden');
+            document.getElementById('btn-analyze-ai').disabled = true;
+            document.getElementById('scanner-result').classList.add('hidden');
+            document.getElementById('scanner-loading').classList.add('hidden');
+            document.getElementById('modal-scanner').classList.remove('hidden');
+        }
+
+        function closeScannerModal() {
+            document.getElementById('modal-scanner').classList.add('hidden');
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedImageBase64 = e.target.result.split(',')[1];
+                const previewImg = document.getElementById('scanner-img-preview');
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                document.getElementById('scanner-placeholder').classList.add('hidden');
+                document.getElementById('btn-analyze-ai').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImageWithGemini() {
+            if (!selectedImageBase64) return;
+            if (!navigator.onLine) {
+                alert("La función de reconocimiento por visión requiere conexión a internet.");
+                return;
+            }
+
+            document.getElementById('scanner-loading').classList.remove('hidden');
+            document.getElementById('scanner-result').classList.add('hidden');
+            document.getElementById('btn-analyze-ai').disabled = true;
+
+            const prompt = `Analiza esta imagen para una aplicación de control de inventario de víveres, frutas, verduras o productos de limpieza.
+            Responde ÚNICAMENTE en formato JSON con la siguiente estructura exacta:
+            {
+              "productName": "Nombre común del producto en español",
+              "category": "Víveres" | "Frutas y Verduras" | "Limpieza" | "Otros",
+              "estimatedQuantity": número_estimado,
+              "unit": "Unidades" | "Kg" | "Litros" | "Paquetes",
+              "ripeness": "Verde / Inmaduro" | "Maduro / Listo" | "Muy Maduro" | "N/A",
+              "details": "Breve descripción incluyendo si es fruta/verdura su madurez o sugerencia de consumo."
+            }`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: "image/jpeg", data: selectedImageBase64 } }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    currentScannedData = JSON.parse(jsonText);
+                    document.getElementById('res-product-name').textContent = currentScannedData.productName;
+                    document.getElementById('res-product-category').textContent = currentScannedData.category;
+                    document.getElementById('res-product-details').textContent = `${currentScannedData.details} (Cantidad est: ${currentScannedData.estimatedQuantity} ${currentScannedData.unit})`;
+                    document.getElementById('scanner-result').classList.remove('hidden');
+                } else {
+                    alert("No se pudo analizar el producto. Inténtalo con otra foto.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error al conectar con el servicio de IA. Revisa tu conexión.");
+            } finally {
+                document.getElementById('scanner-loading').classList.add('hidden');
+                document.getElementById('btn-analyze-ai').disabled = false;
+            }
+        }
+
+        function addScannedProductToInventory() {
+            if (!currentScannedData) return;
+
+            const existing = inventory.find(i => i.name.toLowerCase() === currentScannedData.productName.toLowerCase());
+            if (existing) {
+                existing.stock += currentScannedData.estimatedQuantity || 1;
+                if (currentScannedData.ripeness) existing.ripeness = currentScannedData.ripeness;
+            } else {
+                inventory.push({
+                    id: 'item_' + Date.now(),
+                    name: currentScannedData.productName,
+                    category: currentScannedData.category || 'Otros',
+                    unit: currentScannedData.unit || 'Unidades',
+                    stock: currentScannedData.estimatedQuantity || 1,
+                    dailyConsumption: 0.25,
+                    ripeness: currentScannedData.ripeness || 'N/A',
+                    lastUpdated: Date.now()
+                });
+            }
+
+            saveInventory();
+            runPredictiveEngine();
+            renderAll();
+            closeScannerModal();
+            alert(`¡${currentScannedData.productName} registrado con éxito en tu alacena!`);
+        }
+
+        async function generateRecipes() {
+            if (!navigator.onLine) {
+                alert("La generación de recetas con IA requiere conexión a internet.");
+                return;
+            }
+
+            const availableStock = inventory.filter(i => i.stock > 0 && i.category !== 'Limpieza');
+            if (availableStock.length === 0) {
+                alert("Tu alacena no tiene suficientes víveres o verduras registradas.");
+                return;
+            }
+
+            const stockSummary = availableStock.map(i => `${i.name} (${i.stock} ${i.unit}, estado: ${i.ripeness || 'N/A'})`).join(', ');
+
+            document.getElementById('recipes-loading').classList.remove('hidden');
+            document.getElementById('recipes-container').innerHTML = '';
+
+            const systemPrompt = "Eres un chef experto enfocado en evitar el desperdicio de comida y cocinar recetas deliciosas con lo que hay en casa.";
+            const userQuery = `Tengo exactamente los siguientes ingredientes en mi cocina: ${stockSummary}.
+            Genera 2 o 3 recetas creativas y deliciosas que utilicen PRINCIPALMENTE estos ingredientes. 
+            Responde con un formato JSON estructurado como un array de objetos con las propiedades:
+            - title (string)
+            - cookTime (string)
+            - ingredientsUsed (array de strings)
+            - instructions (array de strings de pasos)`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const recipes = JSON.parse(jsonText);
+                    renderRecipes(recipes);
+                } else {
+                    document.getElementById('recipes-container').innerHTML = `<p class="text-xs text-rose-500 text-center">No se pudieron generar recetas en este momento.</p>`;
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('recipes-container').innerHTML = `<p class="text-xs text-rose-500 text-center">Error al conectar con el servidor de IA.</p>`;
+            } finally {
+                document.getElementById('recipes-loading').classList.add('hidden');
+            }
+        }
+
+        function renderRecipes(recipes) {
+            const container = document.getElementById('recipes-container');
+            container.innerHTML = recipes.map(r => `
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-400">${escapeHtml(r.title)}</h3>
+                        <span class="text-[10px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                            <i class="fa-regular fa-clock mr-1"></i>${escapeHtml(r.cookTime)}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">Ingredientes Usados:</span>
+                        <div class="flex flex-wrap gap-1">
+                            ${r.ingredientsUsed.map(ing => `<span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">${escapeHtml(ing)}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold text-slate-500 block mb-1">Pasos:</span>
+                        <ol class="list-decimal list-inside text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                            ${r.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // UTILS
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
+</body>
+</html>
