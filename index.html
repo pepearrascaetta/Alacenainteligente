@@ -79,6 +79,19 @@
       <div><h2 class="font-bold text-base">Lista de Compras</h2><p class="text-xs text-slate-500 dark:text-slate-400">Predicha por algoritmo de consumo</p></div>
       <button onclick="clearCheckedShoppingItems()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50"><i class="fa-solid fa-trash-can mr-1"></i>Limpiar tildados</button>
     </div>
+    <form onsubmit="addManualShoppingItem(event)" class="card p-3 space-y-2">
+  <div class="flex gap-2">
+    <input type="text" id="shop-name" required placeholder="Agregar producto..." class="inp flex-1">
+    <input type="number" id="shop-qty" step="any" min="0.01" value="1" required class="inp !w-16 text-center">
+    <select id="shop-unit" class="inp !w-auto">
+      <option value="Unidades">Un.</option><option value="Kg">Kg</option><option value="Gramos">g</option><option value="Litros">L</option><option value="Paquetes">Paq.</option>
+    </select>
+  </div>
+  <div class="flex items-center justify-between">
+    <label class="flex items-center gap-2 text-xs text-slate-500"><input type="checkbox" id="shop-track" class="accent-emerald-600"> Seguir en la alacena al comprarlo</label>
+    <button type="submit" class="btn-ok px-4 py-2">Agregar</button>
+  </div>
+</form>
     <div id="shopping-list" class="space-y-2"></div>
     <button onclick="commitPurchases()" class="btn-ok w-full py-3 !text-sm shadow-lg flex items-center justify-center gap-2"><i class="fa-solid fa-cart-flatbed"></i> Confirmar Productos Comprados</button>
   </section>
@@ -382,6 +395,30 @@ function toggleShoppingItem(id) {
 function removeShoppingItem(id) { shoppingList = shoppingList.filter(s => s.id !== id); saveShoppingList(); renderShoppingList(); updateStats(); }
 function clearCheckedShoppingItems() { shoppingList = shoppingList.filter(s => !s.checked); saveShoppingList(); renderShoppingList(); updateStats(); }
 
+function addManualShoppingItem(e) {
+  e.preventDefault();
+  const name = $('shop-name').value.trim();
+  if (!name) return;
+  if (shoppingList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+    return alertBox('Ese producto ya está en la lista.');
+  }
+  const inv = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+  shoppingList.push({
+    id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    itemId: inv ? inv.id : null,
+    name,
+    category: inv ? inv.category : 'Otros',
+    quantityToBuy: parseFloat($('shop-qty').value) || 1,
+    unit: inv ? inv.unit : $('shop-unit').value,
+    checked: false,
+    manual: true,
+    track: $('shop-track').checked
+  });
+  saveShoppingList();
+  e.target.reset();
+  renderShoppingList();
+  updateStats();
+}
 function commitPurchases() {
   const purchased = shoppingList.filter(s => s.checked);
   if (!purchased.length) return alertBox('Tilda los productos que compraste.');
@@ -389,7 +426,7 @@ function commitPurchases() {
   purchased.forEach(p => {
     const it = inventory.find(i => i.id === p.itemId || i.name.toLowerCase() === p.name.toLowerCase());
     if (it) it.stock = round2(it.stock + p.quantityToBuy);
-    else inventory.push({
+    else if (!p.manual || p.track) inventory.push({
       id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       name: p.name, category: p.category || 'Otros', stock: p.quantityToBuy,
       unit: p.unit || 'Unidades', dailyConsumption: 0.2, lastUpdated: Date.now(), ripeness: 'N/A'
