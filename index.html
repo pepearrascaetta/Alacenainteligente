@@ -79,7 +79,7 @@
       <div><h2 class="font-bold text-base">Lista de Compras</h2><p class="text-xs text-slate-500 dark:text-slate-400">Predicha por algoritmo de consumo</p></div>
       <button onclick="clearCheckedShoppingItems()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50"><i class="fa-solid fa-trash-can mr-1"></i>Limpiar tildados</button>
     </div>
-    <form onsubmit="addManualShoppingItem(event)" class="card p-3 space-y-2">
+<form onsubmit="addManualShoppingItem(event)" class="card p-3 space-y-2">
   <div class="flex gap-2">
     <input type="text" id="shop-name" required placeholder="Agregar producto..." class="inp flex-1">
     <input type="number" id="shop-qty" step="any" min="0.01" value="1" required class="inp !w-16 text-center">
@@ -87,6 +87,9 @@
       <option value="Unidades">Un.</option><option value="Kg">Kg</option><option value="Gramos">g</option><option value="Litros">L</option><option value="Paquetes">Paq.</option>
     </select>
   </div>
+  <select id="shop-category" class="inp">
+    <option value="Víveres">Víveres</option><option value="Frutas y Verduras">Frutas y Verduras</option><option value="Limpieza">Limpieza</option><option value="Otros">Otros</option>
+  </select>
   <div class="flex items-center justify-between">
     <label class="flex items-center gap-2 text-xs text-slate-500"><input type="checkbox" id="shop-track" class="accent-emerald-600"> Seguir en la alacena al comprarlo</label>
     <button type="submit" class="btn-ok px-4 py-2">Agregar</button>
@@ -245,7 +248,13 @@ function updateOfflineStatus() {
 function applyConsumption() {
   const now = Date.now();
   inventory.forEach(item => {
-    const days = (now - (item.lastUpdated || now)) / DAY_MS;
+    const last = item.lastUpdated || now;
+    // Productos cargados antes de esta versión: inician su ciclo ahora
+    if (item.cycleStart === undefined && item.stock > 0) {
+      item.cycleStart = last;
+      item.cycleQty = round2(item.stock);
+    }
+    const days = (now - last) / DAY_MS;
     if (days > 0 && item.dailyConsumption > 0 && item.stock > 0) {
       item.stock = Math.max(0, item.stock - item.dailyConsumption * days);
     }
@@ -346,11 +355,11 @@ function renderInventory() {
     const low = daysLeft <= 3;
     const showRipe = item.category === 'Frutas y Verduras' && item.ripeness && item.ripeness !== 'N/A';
     return `
-    <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${low ? 'border-amber-300 dark:border-amber-700/70' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl ${low ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} flex items-center justify-center text-base"><i class="${getCategoryIcon(item.category)}"></i></div>
-        <div>
-          <h4 class="font-bold text-sm leading-tight">${escapeHtml(item.name)}</h4>
+    <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${low ? 'border-amber-300 dark:border-amber-700/70' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 shrink-0 rounded-xl ${low ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} flex items-center justify-center text-base"><i class="${getCategoryIcon(item.category)}"></i></div>
+        <div class="min-w-0">
+          <h4 class="font-bold text-sm leading-tight truncate">${escapeHtml(item.name)}</h4>
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-[11px] text-slate-500">${round2(item.stock)} ${escapeHtml(item.unit)}</span>
             ${showRipe ? `<span class="text-[10px] px-1.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded font-medium">${escapeHtml(item.ripeness)}</span>` : ''}
@@ -358,10 +367,11 @@ function renderInventory() {
           <span class="text-[10px] ${low ? 'text-amber-600 font-bold' : 'text-slate-400'} block mt-0.5"><i class="fa-regular fa-clock mr-1"></i>Se agota en ~${daysLeft > 100 ? '+99' : daysLeft} días</span>
         </div>
       </div>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 shrink-0">
         <button onclick="adjustStock('${item.id}', -1)" class="step-btn">-</button>
         <button onclick="adjustStock('${item.id}', 1)" class="step-btn">+</button>
-        <button onclick="editItem('${item.id}')" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button onclick="editItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button onclick="markOutOfStock('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-500" title="Se terminó"><i class="fa-solid fa-battery-empty"></i></button>
       </div>
     </div>`;
   }).join('');
@@ -370,10 +380,10 @@ function renderInventory() {
 function adjustStock(id, change) {
   applyConsumption();
   const item = inventory.find(i => i.id === id);
-  if (item) {
-    item.stock = Math.max(0, round2(item.stock + change));
-    saveInventory(); runPredictiveEngine(); renderAll();
-  }
+  if (!item) return;
+  if (change > 0) addStock(item, change);
+  else item.stock = Math.max(0, round2(item.stock + change));
+  saveInventory(); runPredictiveEngine(); renderAll();
 }
 
 function renderShoppingList() {
@@ -418,7 +428,7 @@ function addManualShoppingItem(e) {
     id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
     itemId: inv ? inv.id : null,
     name,
-    category: inv ? inv.category : 'Otros',
+    category: inv ? inv.category : $('shop-category').value,
     quantityToBuy: parseFloat($('shop-qty').value) || 1,
     unit: inv ? inv.unit : $('shop-unit').value,
     checked: false,
@@ -448,17 +458,18 @@ function commitPurchases() {
   applyConsumption();
   purchased.forEach(p => {
     const it = inventory.find(i => i.id === p.itemId || i.name.toLowerCase() === p.name.toLowerCase());
-    if (it) it.stock = round2(it.stock + p.quantityToBuy);
+    if (it) addStock(it, p.quantityToBuy);
     else if (!p.manual || p.track) inventory.push({
       id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       name: p.name, category: p.category || 'Otros', stock: p.quantityToBuy,
-      unit: p.unit || 'Unidades', dailyConsumption: 0.2, lastUpdated: Date.now(), ripeness: 'N/A'
+      unit: p.unit || 'Unidades', dailyConsumption: 0.2, lastUpdated: Date.now(), ripeness: 'N/A',
+      cycleStart: Date.now(), cycleQty: p.quantityToBuy
     });
   });
   shoppingList = shoppingList.filter(s => !s.checked);
   saveInventory(); saveShoppingList(); runPredictiveEngine(); renderAll();
 }
-
+  
 function openItemModal() {
   $('modal-item-title').textContent = 'Agregar Producto';
   $('form-item').reset();
@@ -496,9 +507,17 @@ function saveItem(event) {
     lastUpdated: Date.now()
   };
   const item = id && inventory.find(i => i.id === id);
-  if (item) Object.assign(item, data);
-  else inventory.push({ id: 'item_' + Date.now(), ...data });
-
+  if (item) {
+    // Si cambiaste el stock a mano, se reinicia la medición del consumo
+    const stockChanged = Math.abs(data.stock - round2(item.stock)) > 0.001;
+    Object.assign(item, data);
+    if (stockChanged) {
+      item.cycleStart = data.stock > 0 ? Date.now() : null;
+      item.cycleQty = data.stock;
+    }
+  } else {
+    inventory.push({ id: 'item_' + Date.now(), ...data, cycleStart: data.stock > 0 ? Date.now() : null, cycleQty: data.stock });
+  }
   saveInventory(); runPredictiveEngine(); renderAll(); closeModal('modal-item');
 }
 
@@ -589,13 +608,14 @@ function addScannedProductToInventory() {
   const qty = Number(d.estimatedQuantity) || 1;
   const existing = inventory.find(i => i.name.toLowerCase() === String(d.productName).toLowerCase());
   if (existing) {
-    existing.stock = round2(existing.stock + qty);
+    addStock(existing, qty);
     if (d.ripeness) existing.ripeness = d.ripeness;
   } else {
     inventory.push({
       id: 'item_' + Date.now(), name: d.productName, category: d.category || 'Otros',
       unit: d.unit || 'Unidades', stock: qty, dailyConsumption: 0.25,
-      ripeness: d.ripeness || 'N/A', lastUpdated: Date.now()
+      ripeness: d.ripeness || 'N/A', lastUpdated: Date.now(),
+      cycleStart: Date.now(), cycleQty: qty
     });
   }
   saveInventory(); runPredictiveEngine(); renderAll(); closeModal('modal-scanner');
@@ -647,6 +667,41 @@ function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 }
+
+// Suma stock y mantiene el ciclo de medición del consumo
+function addStock(item, qty) {
+  const wasEmpty = item.stock <= 0.001;
+  item.stock = round2(item.stock + qty);
+  if (wasEmpty || !item.cycleStart) {
+    item.cycleStart = Date.now();
+    item.cycleQty = item.stock;
+  } else {
+    item.cycleQty = round2(item.cycleQty + qty);
+  }
+}
+
+// Botón "se terminó": pone el stock en 0 y aprende el consumo real
+function markOutOfStock(id) {
+  applyConsumption();
+  const item = inventory.find(i => i.id === id);
+  if (!item) return;
+  if (!confirm(`¿Se terminó "${item.name}"? El stock pasará a 0.`)) return;
+
+  if (item.cycleStart && item.cycleQty > 0) {
+    const days = (Date.now() - item.cycleStart) / DAY_MS;
+    if (days >= 0.25) {
+      const measured = Math.max(0.001, Math.round(item.cycleQty / days * 1000) / 1000);
+      if (confirm(`Tenías ${round2(item.cycleQty)} ${item.unit} y duraron ${days.toFixed(1)} días.\nConsumo medido: ${measured} ${item.unit}/día (antes: ${item.dailyConsumption}).\n¿Actualizar el consumo diario?`)) {
+        item.dailyConsumption = measured;
+      }
+    }
+  }
+  item.stock = 0;
+  item.cycleStart = null;
+  item.cycleQty = 0;
+  item.lastUpdated = Date.now();
+  saveInventory(); runPredictiveEngine(); renderAll();
+}  
 </script>
 </body>
 </html>
