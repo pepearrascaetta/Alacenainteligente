@@ -71,30 +71,31 @@
       <button onclick="resetToDefaultData()" class="px-3 py-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold hover:bg-rose-100 transition" title="Restaurar valores iniciales"><i class="fa-solid fa-rotate-right"></i></button>
     </div>
 
+    <p class="text-[10px] text-slate-400 text-center -mb-2">Tocá una tarjeta para editarla · "−" registra consumo y mejora la predicción</p>
     <div id="inventory-list" class="space-y-3"></div>
   </section>
 
   <section id="view-shopping" class="space-y-4 hidden">
     <div class="card p-4 flex items-center justify-between">
-      <div><h2 class="font-bold text-base">Lista de Compras</h2><p class="text-xs text-slate-500 dark:text-slate-400">Predicha por algoritmo de consumo</p></div>
+      <div><h2 class="font-bold text-base">Lista de Compras</h2><p class="text-xs text-slate-500 dark:text-slate-400">Se agregan solos los productos con menos de 3 días de stock</p></div>
       <button onclick="clearCheckedShoppingItems()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50"><i class="fa-solid fa-trash-can mr-1"></i>Limpiar tildados</button>
     </div>
-<form onsubmit="addManualShoppingItem(event)" class="card p-3 space-y-2">
-  <div class="flex gap-2">
-    <input type="text" id="shop-name" required placeholder="Agregar producto..." class="inp flex-1">
-    <input type="number" id="shop-qty" step="any" min="0.01" value="1" required class="inp !w-16 text-center">
-    <select id="shop-unit" class="inp !w-auto">
-      <option value="Unidades">Un.</option><option value="Kg">Kg</option><option value="Gramos">g</option><option value="Litros">L</option><option value="Paquetes">Paq.</option>
-    </select>
-  </div>
-  <select id="shop-category" class="inp">
-    <option value="Víveres">Víveres</option><option value="Frutas y Verduras">Frutas y Verduras</option><option value="Limpieza">Limpieza</option><option value="Otros">Otros</option>
-  </select>
-  <div class="flex items-center justify-between">
-    <label class="flex items-center gap-2 text-xs text-slate-500"><input type="checkbox" id="shop-track" class="accent-emerald-600"> Seguir en la alacena al comprarlo</label>
-    <button type="submit" class="btn-ok px-4 py-2">Agregar</button>
-  </div>
-</form>
+    <form onsubmit="addManualShoppingItem(event)" class="card p-3 space-y-2">
+      <div class="flex gap-2">
+        <input type="text" id="shop-name" required placeholder="Agregar producto..." class="inp flex-1">
+        <input type="number" id="shop-qty" step="any" min="0.01" value="1" required class="inp !w-16 text-center">
+        <select id="shop-unit" class="inp !w-auto">
+          <option value="Unidades">Un.</option><option value="Kg">Kg</option><option value="Gramos">g</option><option value="Litros">L</option><option value="Paquetes">Paq.</option>
+        </select>
+      </div>
+      <select id="shop-category" class="inp">
+        <option value="Víveres">Víveres</option><option value="Frutas y Verduras">Frutas y Verduras</option><option value="Limpieza">Limpieza</option><option value="Otros">Otros</option>
+      </select>
+      <div class="flex items-center justify-between">
+        <label class="flex items-center gap-2 text-xs text-slate-500"><input type="checkbox" id="shop-track" class="accent-emerald-600"> Seguir en la alacena al comprarlo</label>
+        <button type="submit" class="btn-ok px-4 py-2">Agregar</button>
+      </div>
+    </form>
     <div id="shopping-list" class="space-y-2"></div>
     <button onclick="commitPurchases()" class="btn-ok w-full py-3 !text-sm shadow-lg flex items-center justify-center gap-2"><i class="fa-solid fa-cart-flatbed"></i> Confirmar Productos Comprados</button>
   </section>
@@ -119,7 +120,7 @@
   </div>
 </nav>
 
-<!-- Modal producto -->
+<!-- Modal producto (crear / editar) -->
 <div id="modal-item" class="modal">
   <div class="modal-box">
     <div class="modal-head"><h3 id="modal-item-title" class="font-bold text-base">Agregar Producto</h3><button onclick="closeModal('modal-item')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button></div>
@@ -134,13 +135,31 @@
       </div>
       <div class="grid grid-cols-2 gap-2">
         <div><label class="lbl">Stock Actual</label><input type="number" step="any" min="0" id="item-stock" required placeholder="0" class="inp"></div>
-        <div><label class="lbl">Consumo Diario Est.</label><input type="number" step="any" min="0.001" id="item-daily" required placeholder="Ej: 0.5" class="inp"></div>
+        <div><label class="lbl">Consumo diario estimado</label><input type="number" step="any" min="0.001" id="item-daily" required placeholder="Ej: 0.5" class="inp"></div>
       </div>
+      <p id="item-learned" class="hidden text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 rounded-lg p-2"></p>
       <div id="ripeness-field-container" class="hidden"><label class="lbl">Madurez</label>
         <select id="item-ripeness" class="inp"><option value="Verde / Inmaduro">Verde / Inmaduro</option><option value="Maduro / Listo">Maduro / Listo para comer</option><option value="Muy Maduro">Muy Maduro (Consumir pronto)</option><option value="N/A">No Aplica</option></select></div>
       <div class="flex gap-2 pt-2">
         <button type="button" onclick="closeModal('modal-item')" class="btn-ghost flex-1 py-2.5">Cancelar</button>
         <button type="submit" class="btn-ok flex-1 py-2.5">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal consumo / agregar stock -->
+<div id="modal-adjust" class="modal">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="adjust-title" class="font-bold text-base"></h3><button onclick="closeModal('modal-adjust')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button></div>
+    <form onsubmit="confirmAdjust(event)" class="space-y-3">
+      <input type="hidden" id="adjust-id"><input type="hidden" id="adjust-mode">
+      <p id="adjust-hint" class="text-xs text-slate-500 dark:text-slate-400"></p>
+      <div><label class="lbl" id="adjust-label"></label>
+        <div class="flex items-center gap-2"><input type="number" step="any" min="0.001" id="adjust-qty" required class="inp"><span id="adjust-unit" class="text-xs text-slate-500 whitespace-nowrap"></span></div></div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="closeModal('modal-adjust')" class="btn-ghost flex-1 py-2.5">Cancelar</button>
+        <button type="submit" class="btn-ok flex-1 py-2.5">Confirmar</button>
       </div>
     </form>
   </div>
@@ -156,7 +175,7 @@
         <div id="scanner-placeholder" class="text-center p-4 space-y-2"><i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400"></i><p class="text-xs text-slate-500">Sube una foto de tu producto, verdura o fruta</p></div>
       </div>
       <input type="file" id="scanner-file-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-      <button onclick="document.getElementById('scanner-file-input').click()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-2"><i class="fa-solid fa-camera"></i> Tomar / Subir Foto</button>
+      <button onclick="$('scanner-file-input').click()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-2"><i class="fa-solid fa-camera"></i> Tomar / Subir Foto</button>
       <button id="btn-analyze-ai" onclick="analyzeImageWithGemini()" disabled class="btn-ok w-full py-2.5 disabled:opacity-50 flex items-center justify-center gap-2"><i class="fa-solid fa-brain"></i> Identificar Producto y Madurez</button>
     </div>
     <div id="scanner-loading" class="hidden text-center py-4 space-y-2"><i class="fa-solid fa-spinner fa-spin text-2xl text-emerald-500"></i><p class="text-xs font-semibold text-slate-500">Procesando imagen con Gemini AI...</p></div>
@@ -177,7 +196,7 @@
       <div><label class="lbl">Tu API Key</label><input type="password" id="input-api-key-val" placeholder="Pega tu clave aquí..." class="inp"></div>
       <div class="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
         <span class="font-semibold block">¿No tienes una API Key?</span>
-        <a href="https://aistudio.google.com/" target="_blank" class="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Obtener clave gratis en Google AI Studio <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>
+        <a href="https://aistudio.google.com/" target="_blank" rel="noopener" class="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Obtener clave gratis en Google AI Studio <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>
       </div>
     </div>
     <div class="flex gap-2 pt-2">
@@ -186,37 +205,44 @@
     </div>
   </div>
 </div>
-    <!-- MODAL: DUPLICATE / SIMILARITY CONFIRMATION -->
-<div id="modal-duplicate" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl border border-amber-300 dark:border-amber-700">
-        <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-            <i class="fa-solid fa-triangle-exclamation text-lg"></i>
-            <h3 class="font-bold text-base">Posible Producto Duplicado</h3>
-        </div>
-        <p id="duplicate-msg" class="text-xs text-slate-600 dark:text-slate-300">Ya existe un producto similar en tu alacena. ¿Qué deseas hacer?</p>
-        <div class="flex flex-col gap-2 pt-2">
-            <button type="button" id="btn-merge-duplicate" onclick="confirmMergeDuplicate()" class="w-full py-2.5 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-md hover:bg-emerald-700">Sumar stock al existente</button>
-            <button type="button" id="btn-force-duplicate" onclick="confirmForceDuplicate()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl">Crear como producto separado</button>
-            <button type="button" onclick="closeDuplicateModal()" class="w-full py-1.5 text-slate-400 hover:text-slate-600 text-xs font-medium">Cancelar</button>
-        </div>
+
+<!-- Modal posible duplicado -->
+<div id="modal-duplicate" class="modal">
+  <div class="modal-box !max-w-sm !border-amber-300 dark:!border-amber-700">
+    <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400"><i class="fa-solid fa-triangle-exclamation text-lg"></i><h3 class="font-bold text-base">Posible Producto Duplicado</h3></div>
+    <p id="duplicate-msg" class="text-xs text-slate-600 dark:text-slate-300"></p>
+    <div class="flex flex-col gap-2 pt-2">
+      <button type="button" onclick="confirmMergeDuplicate()" class="btn-ok w-full py-2.5">Sumar stock al existente</button>
+      <button type="button" onclick="confirmForceDuplicate()" class="btn-ghost w-full py-2.5">Crear como producto separado</button>
+      <button type="button" onclick="closeDuplicateModal()" class="w-full py-1.5 text-slate-400 hover:text-slate-600 text-xs font-medium">Cancelar</button>
     </div>
+  </div>
 </div>
-  
+
 <script>
 const KEY_STOCK = 'smart_pantry_stock_v2';
 const KEY_SHOP = 'smart_pantry_shopping_v2';
 const KEY_API = 'smart_pantry_gemini_apikey';
+// Modelo estable de Google. Alternativa más barata/rápida para esta app: 'gemini-3.5-flash-lite'
 const GEMINI_MODEL = 'gemini-3.8-flash';
 const DAY_MS = 86400000;
+const LOW_DAYS = 3;          // menos de estos días de stock => va a la lista de compras
+const WINDOW_DAYS = 60;      // ventana de historial usada para aprender el consumo
+const MIN_RATE = 0.001;
+const DISCRETE_UNITS = ['Unidades', 'Paquetes'];
+const UNITS = ['Unidades', 'Kg', 'Gramos', 'Litros', 'Paquetes'];
+const CATEGORIES = ['Víveres', 'Frutas y Verduras', 'Limpieza', 'Otros'];
 
 let inventory = [], shoppingList = [];
-let pendingItemPayload = null; // Almacena temporalmente el item pendiente
+let pendingItemPayload = null;
 let currentScannedData = null, selectedImageBase64 = null;
 
 const round2 = n => Math.round(n * 100) / 100;
 const alertBox = msg => alert(msg);
 const $ = id => document.getElementById(id);
 const getApiKey = () => localStorage.getItem(KEY_API) || '';
+const newId = p => p + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
 function openModal(id) { $(id).classList.add('open'); }
 function closeModal(id) { $(id).classList.remove('open'); }
@@ -236,20 +262,15 @@ window.onload = function () {
   switchTab('inventory');
   window.addEventListener('online', updateOfflineStatus);
   window.addEventListener('offline', updateOfflineStatus);
-
   if (!getApiKey()) setTimeout(openApiKeyModal, 800);
-
   $('item-category').addEventListener('change', e =>
     $('ripeness-field-container').classList.toggle('hidden', e.target.value !== 'Frutas y Verduras'));
-
-  // Consumo en tiempo real y al volver a la app
   setInterval(tick, 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 };
 
 function tick() {
-  applyConsumption();
-  runPredictiveEngine();
+  syncShoppingList();
   const typing = document.activeElement?.tagName === 'INPUT' && document.activeElement.closest('#shopping-list');
   if (!typing) renderAll();
 }
@@ -260,42 +281,100 @@ function updateOfflineStatus() {
   $('offline-status-text').textContent = online ? 'Guardado Local / AI Activa' : 'Modo Offline (LocalStorage activo)';
 }
 
-// Descuenta el consumo según el tiempo transcurrido desde la última actualización
-function applyConsumption() {
-  const now = Date.now();
-  inventory.forEach(item => {
-    const last = item.lastUpdated || now;
-    // Productos cargados antes de esta versión: inician su ciclo ahora
-    if (item.cycleStart === undefined && item.stock > 0) {
-      item.cycleStart = last;
-      item.cycleQty = round2(item.stock);
-    }
-    const days = (now - last) / DAY_MS;
-    if (days > 0 && item.dailyConsumption > 0 && item.stock > 0) {
-      item.stock = Math.max(0, item.stock - item.dailyConsumption * days);
-    }
-    item.lastUpdated = now;
-  });
-  saveInventory();
+/* ================= MODELO DE CONSUMO =================
+   item.stock       = stock registrado en item.anchorTime (último movimiento real)
+   item.baseDaily   = consumo diario estimado por el usuario (punto de partida)
+   item.log         = registros de consumo [{t, q}] (cada vez que se resta)
+   item.trackStart  = desde cuándo se mide el consumo
+   El consumo real se aprende de los registros y se mezcla con la estimación
+   inicial (cuantos más días de historial, más peso tiene lo medido). */
+
+function rateOf(item, now = Date.now()) {
+  const base = Math.max(MIN_RATE, item.baseDaily || MIN_RATE);
+  const winStart = Math.max(item.trackStart || now, now - WINDOW_DAYS * DAY_MS);
+  const entries = (item.log || []).filter(e => e.t >= winStart);
+  if (!entries.length) return base;
+  const span = Math.max((now - winStart) / DAY_MS, 1);
+  const measured = entries.reduce((s, e) => s + e.q, 0) / span;
+  const w = Math.min(1, span / 14);
+  return Math.max(MIN_RATE, w * measured + (1 - w) * base);
 }
 
+function currentStock(item, now = Date.now()) {
+  const days = Math.max(0, (now - item.anchorTime) / DAY_MS);
+  return Math.max(0, item.stock - rateOf(item, now) * days);
+}
+
+function daysLeftOf(item, now = Date.now()) {
+  return currentStock(item, now) / rateOf(item, now);
+}
+
+const isLow = item => daysLeftOf(item) < LOW_DAYS;
+
+function fmtDays(d) {
+  if (d < 1) return 'menos de 1 día';
+  if (d > 99) return '+99 días';
+  return (d < 10 ? String(round2(d).toFixed(1)).replace('.', ',') : Math.round(d)) + ' días';
+}
+
+// Agregar stock (compra / suma): parte del stock estimado actual
+function addStock(item, qty) {
+  const now = Date.now();
+  item.stock = round2(currentStock(item, now) + qty);
+  item.anchorTime = now;
+}
+
+// Registrar consumo: descuenta del stock y alimenta el cálculo del consumo
+function consumeItem(item, qty) {
+  const now = Date.now();
+  const est = currentStock(item, now);
+  const used = Math.min(qty, item.stock);
+  if (used > 0) {
+    item.log = (item.log || []).filter(e => e.t >= now - 90 * DAY_MS).slice(-200);
+    item.log.push({ t: now, q: used });
+  }
+  // el stock nunca sube al restar: se toma el menor entre lo estimado y lo registrado
+  item.stock = round2(Math.max(0, Math.min(est, item.stock - used)));
+  item.anchorTime = now;
+  return used;
+}
+
+function normalizeItem(i) {
+  if (i.anchorTime === undefined) i.anchorTime = i.lastUpdated || Date.now();
+  if (i.baseDaily === undefined) i.baseDaily = i.dailyConsumption || 0.2;
+  if (!Array.isArray(i.log)) i.log = [];
+  if (!i.trackStart) i.trackStart = i.cycleStart || i.anchorTime;
+  ['dailyConsumption', 'lastUpdated', 'cycleStart', 'cycleQty'].forEach(k => delete i[k]);
+  return i;
+}
+
+function makeItem(d) {
+  const now = Date.now();
+  return {
+    id: newId('item'), name: d.name, category: d.category, unit: d.unit,
+    stock: round2(d.stock), baseDaily: Math.max(MIN_RATE, d.baseDaily), ripeness: d.ripeness || 'N/A',
+    anchorTime: now, trackStart: now, log: []
+  };
+}
+
+/* ================= DATOS ================= */
 function loadInitialData() {
   const localStock = localStorage.getItem(KEY_STOCK);
   const localShopping = localStorage.getItem(KEY_SHOP);
   try { inventory = localStock ? JSON.parse(localStock) : null; } catch (e) { inventory = null; }
-  if (!inventory) {
-    const t = Date.now();
+  if (!Array.isArray(inventory)) {
     inventory = [
-      { id: '1', name: 'Leche Entera', category: 'Víveres', stock: 2, unit: 'Litros', dailyConsumption: 0.2, lastUpdated: t, ripeness: 'N/A' },
-      { id: '2', name: 'Plátanos', category: 'Frutas y Verduras', stock: 1.5, unit: 'Kg', dailyConsumption: 0.3, lastUpdated: t, ripeness: 'Maduro / Listo' },
-      { id: '3', name: 'Detergente', category: 'Limpieza', stock: 0.4, unit: 'Litros', dailyConsumption: 0.1, lastUpdated: t, ripeness: 'N/A' },
-      { id: '4', name: 'Arroz Blanco', category: 'Víveres', stock: 3, unit: 'Kg', dailyConsumption: 0.15, lastUpdated: t, ripeness: 'N/A' }
-    ];
-    saveInventory();
+      { name: 'Leche Entera', category: 'Víveres', stock: 2, unit: 'Litros', baseDaily: 0.2, ripeness: 'N/A' },
+      { name: 'Plátanos', category: 'Frutas y Verduras', stock: 1.5, unit: 'Kg', baseDaily: 0.3, ripeness: 'Maduro / Listo' },
+      { name: 'Detergente', category: 'Limpieza', stock: 0.4, unit: 'Litros', baseDaily: 0.1, ripeness: 'N/A' },
+      { name: 'Arroz Blanco', category: 'Víveres', stock: 3, unit: 'Kg', baseDaily: 0.15, ripeness: 'N/A' }
+    ].map(makeItem);
   }
+  inventory.forEach(normalizeItem);
+  saveInventory();
   try { shoppingList = localShopping ? JSON.parse(localShopping) : []; } catch (e) { shoppingList = []; }
-  applyConsumption();
-  runPredictiveEngine();
+  if (!Array.isArray(shoppingList)) shoppingList = [];
+  syncShoppingList();
   renderAll();
 }
 
@@ -310,24 +389,35 @@ function resetToDefaultData() {
   }
 }
 
-function daysLeftOf(item) {
-  return item.dailyConsumption > 0 ? Math.round(item.stock / item.dailyConsumption) : 999;
-}
+// Mantiene la lista de compras: todo producto con menos de LOW_DAYS días de stock debe estar en ella
+function syncShoppingList() {
+  const before = shoppingList.length;
+  const findEntry = it => shoppingList.find(s => s.itemId === it.id || (!s.itemId && norm(s.name) === norm(it.name)));
 
-function runPredictiveEngine() {
-  let added = 0;
-  inventory.forEach(item => {
-    if (daysLeftOf(item) <= 3 && !shoppingList.find(s => s.itemId === item.id)) {
-      shoppingList.push({
-        id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        itemId: item.id, name: item.name, category: item.category,
-        quantityToBuy: Math.max(1, Math.ceil(item.dailyConsumption * 7)),
-        unit: item.unit, checked: false, autoAdded: true
-      });
-      added++;
-    }
+  // quita las entradas automáticas de productos que ya se repusieron (si no están tildadas)
+  shoppingList = shoppingList.filter(s => {
+    if (!s.autoAdded || s.checked) return true;
+    const it = inventory.find(i => i.id === s.itemId);
+    return it && isLow(it);
   });
-  if (added) saveShoppingList();
+  let changed = shoppingList.length !== before;
+
+  inventory.forEach(item => {
+    if (!isLow(item)) return;
+    const entry = findEntry(item);
+    if (entry) {
+      if (!entry.itemId) { entry.itemId = item.id; changed = true; }
+      return;
+    }
+    const raw = rateOf(item) * 7;
+    shoppingList.push({
+      id: newId('shop'), itemId: item.id, name: item.name, category: item.category,
+      quantityToBuy: DISCRETE_UNITS.includes(item.unit) ? Math.max(1, Math.ceil(raw)) : Math.max(0.1, round2(raw)),
+      unit: item.unit, checked: false, autoAdded: true
+    });
+    changed = true;
+  });
+  if (changed) saveShoppingList();
 }
 
 function switchTab(tab) {
@@ -343,7 +433,7 @@ function renderAll() { renderInventory(); renderShoppingList(); updateStats(); }
 
 function updateStats() {
   $('stat-total-items').textContent = inventory.length;
-  $('stat-low-stock').textContent = inventory.filter(i => daysLeftOf(i) <= 3).length;
+  $('stat-low-stock').textContent = inventory.filter(isLow).length;
   const pending = shoppingList.filter(s => !s.checked).length;
   $('stat-shopping-count').textContent = pending;
   const badge = $('badge-shopping');
@@ -355,75 +445,112 @@ function getCategoryIcon(c) {
   return { 'Víveres': 'fa-solid fa-wheat-awn', 'Frutas y Verduras': 'fa-solid fa-apple-whole', 'Limpieza': 'fa-solid fa-pump-soap' }[c] || 'fa-solid fa-box';
 }
 
+/* ================= INVENTARIO ================= */
 function renderInventory() {
   const container = $('inventory-list');
-  const q = $('inventory-search').value.toLowerCase();
+  const q = norm($('inventory-search').value);
   const cat = $('inventory-category-filter').value;
-  const filtered = inventory.filter(i => i.name.toLowerCase().includes(q) && (cat === 'ALL' || i.category === cat));
+  const filtered = inventory.filter(i => norm(i.name).includes(q) && (cat === 'ALL' || i.category === cat));
 
   if (!filtered.length) {
     container.innerHTML = `<div class="card text-center py-10"><i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2"></i><p class="text-xs text-slate-500">No hay productos en esta vista.</p></div>`;
     return;
   }
 
+  const now = Date.now();
   container.innerHTML = filtered.map(item => {
-    const daysLeft = daysLeftOf(item);
-    const low = daysLeft <= 3;
+    const stock = currentStock(item, now);
+    const days = daysLeftOf(item, now);
+    const low = days < LOW_DAYS;
     const showRipe = item.category === 'Frutas y Verduras' && item.ripeness && item.ripeness !== 'N/A';
     return `
-    <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${low ? 'border-amber-300 dark:border-amber-700/70' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-2">
+    <div onclick="editItem('${item.id}')" class="cursor-pointer active:scale-[0.99] transition bg-white dark:bg-slate-800 p-3.5 rounded-2xl border ${low ? 'border-amber-300 dark:border-amber-700/70' : 'border-slate-100 dark:border-slate-700'} shadow-sm flex items-center justify-between gap-2">
       <div class="flex items-center gap-3 min-w-0">
         <div class="w-10 h-10 shrink-0 rounded-xl ${low ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} flex items-center justify-center text-base"><i class="${getCategoryIcon(item.category)}"></i></div>
         <div class="min-w-0">
           <h4 class="font-bold text-sm leading-tight truncate">${escapeHtml(item.name)}</h4>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-[11px] text-slate-500">${round2(item.stock)} ${escapeHtml(item.unit)}</span>
+            <span class="text-[11px] text-slate-500">${round2(stock)} ${escapeHtml(item.unit)}</span>
             ${showRipe ? `<span class="text-[10px] px-1.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded font-medium">${escapeHtml(item.ripeness)}</span>` : ''}
           </div>
-          <span class="text-[10px] ${low ? 'text-amber-600 font-bold' : 'text-slate-400'} block mt-0.5"><i class="fa-regular fa-clock mr-1"></i>Se agota en ~${daysLeft > 100 ? '+99' : daysLeft} días</span>
+          <span class="text-[10px] ${low ? 'text-amber-600 font-bold' : 'text-slate-400'} block mt-0.5"><i class="fa-regular fa-clock mr-1"></i>Se agota en ~${fmtDays(days)}</span>
         </div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="adjustStock('${item.id}', -1)" class="step-btn">-</button>
-        <button onclick="adjustStock('${item.id}', 1)" class="step-btn">+</button>
-        <button onclick="editItem('${item.id}')" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-        <button onclick="deleteItem('${item.id}')" class="p-2 text-slate-300 hover:text-rose-500 transition" title="Eliminar producto"><i class="fa-solid fa-trash-can"></i></button>
-        <button onclick="markOutOfStock('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-500" title="Se terminó"><i class="fa-solid fa-battery-empty"></i></button>
+        <button onclick="event.stopPropagation(); openAdjustModal('${item.id}', 'consume')" class="step-btn" title="Registrar consumo">-</button>
+        <button onclick="event.stopPropagation(); openAdjustModal('${item.id}', 'add')" class="step-btn" title="Agregar stock">+</button>
+        <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="p-2 text-slate-300 hover:text-rose-500 transition ml-1" title="Eliminar producto"><i class="fa-solid fa-trash-can"></i></button>
+        <button onclick="event.stopPropagation(); markOutOfStock('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-500" title="Se terminó"><i class="fa-solid fa-battery-empty"></i></button>
       </div>
     </div>`;
   }).join('');
 }
 
-function adjustStock(id, change) {
-  applyConsumption();
+function defaultStep(unit) { return { Unidades: 1, Paquetes: 1, Kg: 0.5, Litros: 0.5, Gramos: 100 }[unit] || 1; }
+
+function openAdjustModal(id, mode) {
   const item = inventory.find(i => i.id === id);
   if (!item) return;
-  if (change > 0) addStock(item, change);
-  else item.stock = Math.max(0, round2(item.stock + change));
-  saveInventory(); runPredictiveEngine(); renderAll();
+  const consume = mode === 'consume';
+  $('adjust-id').value = id;
+  $('adjust-mode').value = mode;
+  $('adjust-title').textContent = (consume ? 'Registrar consumo: ' : 'Agregar stock: ') + item.name;
+  $('adjust-hint').textContent = consume
+    ? 'Lo que gastaste se descuenta del stock y la app lo usa para calcular cuándo se te va a terminar.'
+    : 'Se suma al stock actual (por ejemplo, una compra que no pasó por la lista).';
+  $('adjust-label').textContent = consume ? '¿Cuánto se consumió?' : '¿Cuánto agregás?';
+  $('adjust-unit').textContent = item.unit;
+  $('adjust-qty').value = defaultStep(item.unit);
+  openModal('modal-adjust');
+  setTimeout(() => $('adjust-qty').select(), 50);
+}
+
+function confirmAdjust(e) {
+  e.preventDefault();
+  const item = inventory.find(i => i.id === $('adjust-id').value);
+  const qty = parseFloat($('adjust-qty').value);
+  if (!item || !(qty > 0)) return alertBox('Ingresá una cantidad válida.');
+  if ($('adjust-mode').value === 'consume') {
+    if (item.stock <= 0 && currentStock(item) <= 0) return alertBox('Este producto ya no tiene stock.');
+    consumeItem(item, qty);
+  } else {
+    addStock(item, qty);
+  }
+  closeModal('modal-adjust');
+  saveInventory(); syncShoppingList(); renderAll();
+}
+
+// "Se terminó": consume todo lo registrado y lo usa para aprender el consumo
+function markOutOfStock(id) {
+  const item = inventory.find(i => i.id === id);
+  if (!item) return;
+  if (!confirm(`¿Se terminó "${item.name}"? El stock pasará a 0.`)) return;
+  consumeItem(item, item.stock);
+  item.stock = 0;
+  saveInventory(); syncShoppingList(); renderAll();
 }
 
 function deleteItem(id) {
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-
-    if (confirm(`¿Estás seguro de eliminar "${item.name}" de la alacena?`)) {
-        inventory = inventory.filter(i => i.id !== id);
-        shoppingList = shoppingList.filter(s => s.itemId !== id);
-        saveInventory();
-        saveShoppingList();
-        renderAll();
-        alertBox(`Se eliminó "${item.name}" correctamente.`);
-     }
+  const item = inventory.find(i => i.id === id);
+  if (!item) return;
+  if (confirm(`¿Estás seguro de eliminar "${item.name}" de la alacena?`)) {
+    inventory = inventory.filter(i => i.id !== id);
+    shoppingList = shoppingList.filter(s => s.itemId !== id);
+    saveInventory(); saveShoppingList(); renderAll();
+  }
 }
 
+/* ================= LISTA DE COMPRAS ================= */
 function renderShoppingList() {
   const c = $('shopping-list');
   if (!shoppingList.length) {
     c.innerHTML = `<div class="card text-center py-10"><i class="fa-solid fa-cart-arrow-down text-3xl text-slate-300 mb-2"></i><p class="text-xs text-slate-500">Tu lista de compras está al día.</p></div>`;
     return;
   }
-  c.innerHTML = shoppingList.map(item => `
+  c.innerHTML = shoppingList.map(item => {
+    const inv = inventory.find(i => i.id === item.itemId);
+    const locked = item.autoAdded && inv && isLow(inv); // stock bajo: no se puede quitar a mano
+    return `
     <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3 ${item.checked ? 'opacity-50' : ''}">
       <div class="flex items-center gap-3">
         <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem('${item.id}')" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer">
@@ -436,8 +563,11 @@ function renderShoppingList() {
           </div>
         </div>
       </div>
-      <button onclick="removeShoppingItem('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1"><i class="fa-solid fa-xmark text-base"></i></button>
-    </div>`).join('');
+      ${locked
+        ? `<span class="text-[9px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-300 px-1.5 py-0.5 rounded whitespace-nowrap">Stock bajo</span>`
+        : `<button onclick="removeShoppingItem('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1"><i class="fa-solid fa-xmark text-base"></i></button>`}
+    </div>`;
+  }).join('');
 }
 
 function toggleShoppingItem(id) {
@@ -451,66 +581,55 @@ function addManualShoppingItem(e) {
   e.preventDefault();
   const name = $('shop-name').value.trim();
   if (!name) return;
-  if (shoppingList.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-    return alertBox('Ese producto ya está en la lista.');
-  }
-  const inv = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+  if (shoppingList.some(s => norm(s.name) === norm(name))) return alertBox('Ese producto ya está en la lista.');
+  const inv = inventory.find(i => norm(i.name) === norm(name));
   shoppingList.push({
-    id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    id: newId('shop'),
     itemId: inv ? inv.id : null,
     name,
     category: inv ? inv.category : $('shop-category').value,
     quantityToBuy: parseFloat($('shop-qty').value) || 1,
     unit: inv ? inv.unit : $('shop-unit').value,
-    checked: false,
-    manual: true,
-    track: $('shop-track').checked
+    checked: false, manual: true, track: $('shop-track').checked
   });
   saveShoppingList();
   e.target.reset();
-  renderShoppingList();
-  updateStats();
+  renderShoppingList(); updateStats();
 }
 
 function updateShoppingQty(id, value) {
   const item = shoppingList.find(s => s.id === id);
   const qty = parseFloat(value);
-  if (item && qty > 0) {
-    item.quantityToBuy = qty;
-    saveShoppingList();
-  } else {
-    renderShoppingList(); // valor inválido: vuelve al anterior
-  }
+  if (item && qty > 0) { item.quantityToBuy = qty; saveShoppingList(); }
+  else renderShoppingList();
 }
 
 function commitPurchases() {
   const purchased = shoppingList.filter(s => s.checked);
   if (!purchased.length) return alertBox('Tilda los productos que compraste.');
-  applyConsumption();
   purchased.forEach(p => {
-    const it = inventory.find(i => i.id === p.itemId || i.name.toLowerCase() === p.name.toLowerCase());
+    const it = inventory.find(i => i.id === p.itemId || norm(i.name) === norm(p.name));
     if (it) addStock(it, p.quantityToBuy);
-    else if (!p.manual || p.track) inventory.push({
-      id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-      name: p.name, category: p.category || 'Otros', stock: p.quantityToBuy,
-      unit: p.unit || 'Unidades', dailyConsumption: 0.2, lastUpdated: Date.now(), ripeness: 'N/A',
-      cycleStart: Date.now(), cycleQty: p.quantityToBuy
-    });
+    else if (!p.manual || p.track) inventory.push(makeItem({
+      name: p.name, category: p.category || 'Otros', unit: p.unit || 'Unidades',
+      stock: p.quantityToBuy, baseDaily: 0.2, ripeness: 'N/A'
+    }));
   });
   shoppingList = shoppingList.filter(s => !s.checked);
-  saveInventory(); saveShoppingList(); runPredictiveEngine(); renderAll();
+  saveInventory(); saveShoppingList(); syncShoppingList(); renderAll();
 }
-  
+
+/* ================= ALTA / EDICIÓN ================= */
 function openItemModal() {
   $('modal-item-title').textContent = 'Agregar Producto';
   $('form-item').reset();
   $('item-id').value = '';
+  $('item-learned').classList.add('hidden');
   $('ripeness-field-container').classList.add('hidden');
   openModal('modal-item');
 }
 
 function editItem(id) {
-  applyConsumption();
   const item = inventory.find(i => i.id === id);
   if (!item) return;
   $('modal-item-title').textContent = 'Editar Producto';
@@ -518,92 +637,92 @@ function editItem(id) {
   $('item-name').value = item.name;
   $('item-category').value = item.category;
   $('item-unit').value = item.unit;
-  $('item-stock').value = round2(item.stock);
-  $('item-daily').value = item.dailyConsumption;
+  $('item-stock').value = round2(currentStock(item));
+  $('item-daily').value = item.baseDaily;
   $('item-ripeness').value = item.ripeness || 'N/A';
   $('ripeness-field-container').classList.toggle('hidden', item.category !== 'Frutas y Verduras');
+  const learned = $('item-learned');
+  const n = (item.log || []).length;
+  learned.textContent = n
+    ? `Consumo calculado por la app: ${round2(rateOf(item) * 1000) / 1000} ${item.unit}/día (según ${n} registro${n > 1 ? 's' : ''} de consumo). Es el que se usa para predecir.`
+    : 'Todavía no hay registros de consumo: se usa tu estimación. Usá el botón "−" para que la app aprenda.';
+  learned.classList.remove('hidden');
   openModal('modal-item');
 }
-  
+
 function saveItem(event) {
-    event.preventDefault();
-    const id = document.getElementById('item-id').value;
-    const name = document.getElementById('item-name').value.trim();
-    const category = document.getElementById('item-category').value;
-    const unit = document.getElementById('item-unit').value;
-    const stock = parseFloat(document.getElementById('item-stock').value);
-    const daily = parseFloat(document.getElementById('item-daily').value);
-    const ripeness = document.getElementById('item-ripeness').value;
+  event.preventDefault();
+  const id = $('item-id').value;
+  const name = $('item-name').value.trim();
+  const category = $('item-category').value;
+  const unit = $('item-unit').value;
+  const stock = parseFloat($('item-stock').value);
+  const daily = parseFloat($('item-daily').value);
+  const ripeness = category === 'Frutas y Verduras' ? $('item-ripeness').value : 'N/A';
+  if (!name || isNaN(stock) || stock < 0 || !(daily > 0)) return alertBox('Revisá los datos ingresados.');
 
-            // Validación de duplicados solo para productos nuevos
-    if (!id) {
-      const existing = inventory.find(i => checkSimilarity(i.name, name));
-      if (existing) {
-            pendingItemPayload = {
-                id: null,
-                name,
-                category,
-                unit,
-                stock,
-                dailyConsumption: daily,
-                ripeness: category === 'Frutas y Verduras' ? ripeness : 'N/A',
-                existingId: existing.id,
-                existingName: existing.name
-            };
-            closeItemModal();
-            document.getElementById('duplicate-msg').innerHTML = `Ya existe un producto parecido o igual: <strong>"${existing.name}"</strong>. ¿Deseas sumar los ${stock} ${unit} al stock existente o crearlo separado?`;
-            document.getElementById('modal-duplicate').classList.remove('hidden');
-            return; // Interrumpe el guardado normal para mostrar el modal de duplicados
-        }
+  const data = { id, name, category, unit, stock, baseDaily: daily, ripeness };
+
+  if (!id) {
+    const existing = inventory.find(i => checkSimilarity(i.name, name));
+    if (existing) {
+      pendingItemPayload = { ...data, existingId: existing.id };
+      closeModal('modal-item');
+      $('duplicate-msg').innerHTML = `Ya existe un producto parecido o igual: <strong>"${escapeHtml(existing.name)}"</strong>. ¿Deseas sumar los ${escapeHtml(stock)} ${escapeHtml(unit)} al stock existente o crearlo separado?`;
+      openModal('modal-duplicate');
+      return;
     }
-
-            // Guardado normal (si edita o si no hay duplicados)
-    executeSaveItem({ 
-      id, 
-      name, 
-      category, 
-      unit, 
-      stock, 
-      dailyConsumption: daily, 
-      ripeness: category === 'Frutas y Verduras' ? ripeness : 'N/A' 
-    });
+  }
+  executeSaveItem(data);
 }
 
-function closeDuplicateModal() {
-    document.getElementById('modal-duplicate').classList.add('hidden');
-    pendingItemPayload = null;
+function executeSaveItem(data) {
+  if (data.id) {
+    const item = inventory.find(i => i.id === data.id);
+    if (!item) return;
+    const shown = round2(currentStock(item));
+    Object.assign(item, { name: data.name, category: data.category, unit: data.unit, baseDaily: data.baseDaily, ripeness: data.ripeness });
+    if (round2(data.stock) !== shown) { // el usuario corrigió el stock: se toma como el valor real de hoy
+      item.stock = round2(data.stock);
+      item.anchorTime = Date.now();
+    }
+  } else {
+    inventory.push(makeItem(data));
+  }
+  closeModal('modal-item');
+  closeDuplicateModal();
+  saveInventory(); syncShoppingList(); renderAll();
 }
+
+function closeDuplicateModal() { closeModal('modal-duplicate'); pendingItemPayload = null; }
 
 function confirmMergeDuplicate() {
-    if (!pendingItemPayload) return;
-    const existing = inventory.find(i => i.id === pendingItemPayload.existingId);
-    if (existing) {
-        existing.stock += pendingItemPayload.stock;
-        saveInventory();
-        runPredictiveEngine();
-        renderAll();
-        alertBox(`Se sumaron ${pendingItemPayload.stock} ${pendingItemPayload.unit} a "${existing.name}".`);
-    }
-    closeDuplicateModal();
+  if (!pendingItemPayload) return;
+  const existing = inventory.find(i => i.id === pendingItemPayload.existingId);
+  if (existing) {
+    addStock(existing, pendingItemPayload.stock);
+    saveInventory(); syncShoppingList(); renderAll();
+  }
+  closeDuplicateModal();
 }
 
 function confirmForceDuplicate() {
-    if (!pendingItemPayload) return;
-    const data = { ...pendingItemPayload };
-    delete data.existingId;
-    delete data.existingName;
-    executeSaveItem(data);
+  if (!pendingItemPayload) return;
+  const data = { ...pendingItemPayload };
+  delete data.existingId;
+  executeSaveItem(data);
 }
 
-function checkSimilarity(str1, str2) {
-    const s1 = str1.toLowerCase().trim();
-    const s2 = str2.toLowerCase().trim();
-    if (s1 === s2) return true;
-    if (s1.includes(s2) || s2.includes(s1)) return true;
-    return false;
+// Compara por palabras completas ("Sal" no coincide con "Salsa", pero "Leche" sí con "Leche Entera")
+function checkSimilarity(a, b) {
+  const words = s => norm(s).split(/\s+/).filter(Boolean).map(w => w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w);
+  const A = words(a), B = words(b);
+  if (!A.length || !B.length) return false;
+  const sub = (x, y) => x.every(w => y.includes(w));
+  return sub(A, B) || sub(B, A);
 }
-  
-/* ---------- IA ---------- */
+
+/* ================= IA ================= */
 function openScannerModal() {
   selectedImageBase64 = null; currentScannedData = null;
   $('scanner-file-input').value = '';
@@ -645,8 +764,12 @@ function handleImageSelect(event) {
 async function callGemini(payload) {
   const apiKey = getApiKey();
   if (!apiKey) { openApiKeyModal(); throw new Error('Falta configurar la API Key.'); }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify(payload)
+  });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || ('Error HTTP ' + response.status));
   const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('');
@@ -662,7 +785,7 @@ async function analyzeImageWithGemini() {
 
   const prompt = `Analiza esta imagen para una aplicación de control de inventario de alacena y frutas/verduras.
 Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
-{"productName": "Nombre común", "category": "Víveres" | "Frutas y Verduras" | "Limpieza" | "Otros", "estimatedQuantity": 1, "unit": "Unidades" | "Kg" | "Litros" | "Paquetes", "ripeness": "Verde / Inmaduro" | "Maduro / Listo" | "Muy Maduro" | "N/A", "details": "Breve descripción"}`;
+{"productName": "Nombre común", "category": "Víveres" | "Frutas y Verduras" | "Limpieza" | "Otros", "estimatedQuantity": 1, "unit": "Unidades" | "Kg" | "Gramos" | "Litros" | "Paquetes", "ripeness": "Verde / Inmaduro" | "Maduro / Listo" | "Muy Maduro" | "N/A", "details": "Breve descripción"}`;
 
   try {
     const result = await callGemini({
@@ -685,30 +808,28 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
 
 function addScannedProductToInventory() {
   const d = currentScannedData;
-  if (!d) return;
-  applyConsumption();
-  const qty = Number(d.estimatedQuantity) || 1;
-  const existing = inventory.find(i => i.name.toLowerCase() === String(d.productName).toLowerCase());
+  if (!d || !d.productName) return;
+  const qty = Number(d.estimatedQuantity) > 0 ? Number(d.estimatedQuantity) : 1;
+  const existing = inventory.find(i => checkSimilarity(i.name, d.productName));
   if (existing) {
     addStock(existing, qty);
-    if (d.ripeness) existing.ripeness = d.ripeness;
+    if (d.ripeness && existing.category === 'Frutas y Verduras') existing.ripeness = d.ripeness;
   } else {
-    inventory.push({
-      id: 'item_' + Date.now(), name: d.productName, category: d.category || 'Otros',
-      unit: d.unit || 'Unidades', stock: qty, dailyConsumption: 0.25,
-      ripeness: d.ripeness || 'N/A', lastUpdated: Date.now(),
-      cycleStart: Date.now(), cycleQty: qty
-    });
+    inventory.push(makeItem({
+      name: String(d.productName),
+      category: CATEGORIES.includes(d.category) ? d.category : 'Otros',
+      unit: UNITS.includes(d.unit) ? d.unit : 'Unidades',
+      stock: qty, baseDaily: 0.25, ripeness: d.ripeness || 'N/A'
+    }));
   }
-  saveInventory(); runPredictiveEngine(); renderAll(); closeModal('modal-scanner');
+  saveInventory(); syncShoppingList(); renderAll(); closeModal('modal-scanner');
 }
 
 async function generateRecipes() {
-  applyConsumption();
-  const available = inventory.filter(i => i.stock > 0 && i.category !== 'Limpieza');
+  const available = inventory.filter(i => currentStock(i) > 0.01 && i.category !== 'Limpieza');
   if (!available.length) return alertBox('No hay ingredientes disponibles en tu alacena.');
 
-  const summary = available.map(i => `${i.name} (${round2(i.stock)} ${i.unit})`).join(', ');
+  const summary = available.map(i => `${i.name} (${round2(currentStock(i))} ${i.unit})`).join(', ');
   $('recipes-loading').classList.remove('hidden');
   $('recipes-container').innerHTML = '';
   $('btn-recipes').disabled = true;
@@ -749,41 +870,7 @@ function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 }
-
-// Suma stock y mantiene el ciclo de medición del consumo
-function addStock(item, qty) {
-  const wasEmpty = item.stock <= 0.001;
-  item.stock = round2(item.stock + qty);
-  if (wasEmpty || !item.cycleStart) {
-    item.cycleStart = Date.now();
-    item.cycleQty = item.stock;
-  } else {
-    item.cycleQty = round2(item.cycleQty + qty);
-  }
-}
-
-// Botón "se terminó": pone el stock en 0 y aprende el consumo real
-function markOutOfStock(id) {
-  applyConsumption();
-  const item = inventory.find(i => i.id === id);
-  if (!item) return;
-  if (!confirm(`¿Se terminó "${item.name}"? El stock pasará a 0.`)) return;
-
-  if (item.cycleStart && item.cycleQty > 0) {
-    const days = (Date.now() - item.cycleStart) / DAY_MS;
-    if (days >= 0.25) {
-      const measured = Math.max(0.001, Math.round(item.cycleQty / days * 1000) / 1000);
-      if (confirm(`Tenías ${round2(item.cycleQty)} ${item.unit} y duraron ${days.toFixed(1)} días.\nConsumo medido: ${measured} ${item.unit}/día (antes: ${item.dailyConsumption}).\n¿Actualizar el consumo diario?`)) {
-        item.dailyConsumption = measured;
-      }
-    }
-  }
-  item.stock = 0;
-  item.cycleStart = null;
-  item.cycleQty = 0;
-  item.lastUpdated = Date.now();
-  saveInventory(); runPredictiveEngine(); renderAll();
-}  
 </script>
 </body>
 </html>
+
