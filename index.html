@@ -186,7 +186,22 @@
     </div>
   </div>
 </div>
-
+    <!-- MODAL: DUPLICATE / SIMILARITY CONFIRMATION -->
+<div id="modal-duplicate" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl border border-amber-300 dark:border-amber-700">
+        <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            <h3 class="font-bold text-base">Posible Producto Duplicado</h3>
+        </div>
+        <p id="duplicate-msg" class="text-xs text-slate-600 dark:text-slate-300">Ya existe un producto similar en tu alacena. ¿Qué deseas hacer?</p>
+        <div class="flex flex-col gap-2 pt-2">
+            <button type="button" id="btn-merge-duplicate" onclick="confirmMergeDuplicate()" class="w-full py-2.5 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-md hover:bg-emerald-700">Sumar stock al existente</button>
+            <button type="button" id="btn-force-duplicate" onclick="confirmForceDuplicate()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl">Crear como producto separado</button>
+            <button type="button" onclick="closeDuplicateModal()" class="w-full py-1.5 text-slate-400 hover:text-slate-600 text-xs font-medium">Cancelar</button>
+        </div>
+    </div>
+</div>
+  
 <script>
 const KEY_STOCK = 'smart_pantry_stock_v2';
 const KEY_SHOP = 'smart_pantry_shopping_v2';
@@ -195,6 +210,7 @@ const GEMINI_MODEL = 'gemini-3.8-flash';
 const DAY_MS = 86400000;
 
 let inventory = [], shoppingList = [];
+let pendingItemPayload = null; // Almacena temporalmente el item pendiente
 let currentScannedData = null, selectedImageBase64 = null;
 
 const round2 = n => Math.round(n * 100) / 100;
@@ -370,7 +386,8 @@ function renderInventory() {
       <div class="flex items-center gap-1 shrink-0">
         <button onclick="adjustStock('${item.id}', -1)" class="step-btn">-</button>
         <button onclick="adjustStock('${item.id}', 1)" class="step-btn">+</button>
-        <button onclick="editItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button onclick="editItem('${item.id}')" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button onclick="deleteItem('${item.id}')" class="p-2 text-slate-300 hover:text-rose-500 transition" title="Eliminar producto"><i class="fa-solid fa-trash-can"></i></button>
         <button onclick="markOutOfStock('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-500" title="Se terminó"><i class="fa-solid fa-battery-empty"></i></button>
       </div>
     </div>`;
@@ -384,6 +401,20 @@ function adjustStock(id, change) {
   if (change > 0) addStock(item, change);
   else item.stock = Math.max(0, round2(item.stock + change));
   saveInventory(); runPredictiveEngine(); renderAll();
+}
+
+function deleteItem(id) {
+    const item = inventory.find(i => i.id === id);
+    if (!item) return;
+
+    if (confirm(`¿Estás seguro de eliminar "${item.name}" de la alacena?`)) {
+        inventory = inventory.filter(i => i.id !== id);
+        shoppingList = shoppingList.filter(s => s.itemId !== id);
+        saveInventory();
+        saveShoppingList();
+        renderAll();
+        alertBox(`Se eliminó "${item.name}" correctamente.`);
+     }
 }
 
 function renderShoppingList() {
@@ -494,33 +525,78 @@ function editItem(id) {
   openModal('modal-item');
 }
 function saveItem(event) {
-  event.preventDefault();
-  const id = $('item-id').value;
-  const category = $('item-category').value;
-  const data = {
-    name: $('item-name').value.trim(),
-    category,
-    unit: $('item-unit').value,
-    stock: parseFloat($('item-stock').value),
-    dailyConsumption: parseFloat($('item-daily').value),
-    ripeness: category === 'Frutas y Verduras' ? $('item-ripeness').value : 'N/A',
-    lastUpdated: Date.now()
-  };
-  const item = id && inventory.find(i => i.id === id);
-  if (item) {
-    // Si cambiaste el stock a mano, se reinicia la medición del consumo
-    const stockChanged = Math.abs(data.stock - round2(item.stock)) > 0.001;
-    Object.assign(item, data);
-    if (stockChanged) {
-      item.cycleStart = data.stock > 0 ? Date.now() : null;
-      item.cycleQty = data.stock;
+    event.preventDefault();
+    const id = document.getElementById('item-id').value;
+    const category = document.getElementById('item-category').value;
+    const data = {
+        name: document.getElementById('item-name').value.trim(),
+        category,
+        unit: document.getElementById('item-unit').value,
+        stock: parseFloat(document.getElementById('item-stock').value),
+        dailyConsumption: parseFloat(document.getElementById('item-daily').value),
+        ripeness: category === 'Frutas y Verduras' ? document.getElementById('item-ripeness').value : 'N/A',
+        lastUpdated: Date.now()
+    };
+
+            // Si es un producto nuevo, verificamos si ya existe uno parecido
+    if (!id) {
+        const existing = inventory.find(i => checkSimilarity(i.name, data.name));
+        if (existing) {
+          pendingItemPayload = {
+                id: null,
+                name: data.name,
+                category: data.category,
+                unit: data.unit,
+                stock: data.stock,
+                dailyConsumption: data.dailyConsumption,
+                ripeness: data.ripeness,
+                existingId: existing.id,
+                existingName: existing.name
+            };
+            closeItemModal();
+            document.getElementById('duplicate-msg').innerHTML = `Ya existe un producto parecido o igual: <strong>"${existing.name}"</strong>. ¿Deseas sumar los ${data.stock} ${data.unit} al stock existente o crearlo separado?`;
+            document.getElementById('modal-duplicate').classList.remove('hidden');
+            return;
+        }
     }
-  } else {
-    inventory.push({ id: 'item_' + Date.now(), ...data, cycleStart: data.stock > 0 ? Date.now() : null, cycleQty: data.stock });
-  }
-  saveInventory(); runPredictiveEngine(); renderAll(); closeModal('modal-item');
+            // Si no hay duplicados o estás editando, guarda con normalidad
+    executeSaveItem({ id, ...data });
 }
 
+function closeDuplicateModal() {
+    document.getElementById('modal-duplicate').classList.add('hidden');
+    pendingItemPayload = null;
+}
+
+function confirmMergeDuplicate() {
+    if (!pendingItemPayload) return;
+    const existing = inventory.find(i => i.id === pendingItemPayload.existingId);
+    if (existing) {
+        existing.stock += pendingItemPayload.stock;
+        saveInventory();
+        runPredictiveEngine();
+        renderAll();
+        alertBox(`Se sumaron ${pendingItemPayload.stock} ${pendingItemPayload.unit} a "${existing.name}".`);
+    }
+    closeDuplicateModal();
+}
+
+function confirmForceDuplicate() {
+    if (!pendingItemPayload) return;
+    const data = { ...pendingItemPayload };
+    delete data.existingId;
+    delete data.existingName;
+    executeSaveItem(data);
+}
+
+function checkSimilarity(str1, str2) {
+    const s1 = str1.toLowerCase().trim();
+    const s2 = str2.toLowerCase().trim();
+    if (s1 === s2) return true;
+    if (s1.includes(s2) || s2.includes(s1)) return true;
+    return false;
+}
+  
 /* ---------- IA ---------- */
 function openScannerModal() {
   selectedImageBase64 = null; currentScannedData = null;
