@@ -524,43 +524,49 @@ function editItem(id) {
   $('ripeness-field-container').classList.toggle('hidden', item.category !== 'Frutas y Verduras');
   openModal('modal-item');
 }
+  
 function saveItem(event) {
     event.preventDefault();
     const id = document.getElementById('item-id').value;
+    const name = document.getElementById('item-name').value.trim();
     const category = document.getElementById('item-category').value;
-    const data = {
-        name: document.getElementById('item-name').value.trim(),
-        category,
-        unit: document.getElementById('item-unit').value,
-        stock: parseFloat(document.getElementById('item-stock').value),
-        dailyConsumption: parseFloat(document.getElementById('item-daily').value),
-        ripeness: category === 'Frutas y Verduras' ? document.getElementById('item-ripeness').value : 'N/A',
-        lastUpdated: Date.now()
-    };
+    const unit = document.getElementById('item-unit').value;
+    const stock = parseFloat(document.getElementById('item-stock').value);
+    const daily = parseFloat(document.getElementById('item-daily').value);
+    const ripeness = document.getElementById('item-ripeness').value;
 
-            // Si es un producto nuevo, verificamos si ya existe uno parecido
+            // Validación de duplicados solo para productos nuevos
     if (!id) {
-        const existing = inventory.find(i => checkSimilarity(i.name, data.name));
-        if (existing) {
-          pendingItemPayload = {
+      const existing = inventory.find(i => checkSimilarity(i.name, name));
+      if (existing) {
+            pendingItemPayload = {
                 id: null,
-                name: data.name,
-                category: data.category,
-                unit: data.unit,
-                stock: data.stock,
-                dailyConsumption: data.dailyConsumption,
-                ripeness: data.ripeness,
+                name,
+                category,
+                unit,
+                stock,
+                dailyConsumption: daily,
+                ripeness: category === 'Frutas y Verduras' ? ripeness : 'N/A',
                 existingId: existing.id,
                 existingName: existing.name
             };
             closeItemModal();
-            document.getElementById('duplicate-msg').innerHTML = `Ya existe un producto parecido o igual: <strong>"${existing.name}"</strong>. ¿Deseas sumar los ${data.stock} ${data.unit} al stock existente o crearlo separado?`;
+            document.getElementById('duplicate-msg').innerHTML = `Ya existe un producto parecido o igual: <strong>"${existing.name}"</strong>. ¿Deseas sumar los ${stock} ${unit} al stock existente o crearlo separado?`;
             document.getElementById('modal-duplicate').classList.remove('hidden');
-            return;
+            return; // Interrumpe el guardado normal para mostrar el modal de duplicados
         }
     }
-            // Si no hay duplicados o estás editando, guarda con normalidad
-    executeSaveItem({ id, ...data });
+
+            // Guardado normal (si edita o si no hay duplicados)
+    executeSaveItem({ 
+      id, 
+      name, 
+      category, 
+      unit, 
+      stock, 
+      dailyConsumption: daily, 
+      ripeness: category === 'Frutas y Verduras' ? ripeness : 'N/A' 
+    });
 }
 
 function closeDuplicateModal() {
